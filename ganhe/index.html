@@ -1,0 +1,1149 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>甘河工业园区环卫绿化项目管理系统</title>
+<script src="../chart.min.js"></script>
+<script src="../chart-labels.js"></script>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --primary:#4f6ef7;--primary-light:#eef1fe;--primary-dark:#3a56d4;
+  --success:#22c55e;--warning:#f59e0b;--danger:#ef4444;
+  --bg:#f0f2f5;--card:#fff;--text:#1f2937;--text-secondary:#6b7280;
+  --border:#e5e7eb;--sidebar-w:240px;--header-h:60px;
+  --radius:10px;--shadow:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.06);
+  --shadow-lg:0 10px 25px rgba(0,0,0,.1);
+}
+html{font-size:14px}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;color:var(--text);background:var(--bg);line-height:1.6}
+a{color:var(--primary);text-decoration:none}
+button{cursor:pointer;font-family:inherit}
+input,select,textarea{font-family:inherit;font-size:inherit}
+
+/* ===== LOGIN PAGE ===== */
+.login-page{display:flex;min-height:100vh;align-items:center;justify-content:center;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);padding:20px}
+.login-card{background:#fff;border-radius:16px;padding:48px 40px;width:100%;max-width:420px;box-shadow:var(--shadow-lg)}
+.login-card h1{font-size:1.5rem;text-align:center;margin-bottom:8px;color:var(--text)}
+.login-card .subtitle{text-align:center;color:var(--text-secondary);margin-bottom:32px;font-size:.9rem}
+.login-card .logo{text-align:center;font-size:2.8rem;margin-bottom:16px}
+.form-group{margin-bottom:20px}
+.form-group label{display:block;margin-bottom:6px;font-weight:500;color:var(--text)}
+.form-group input,.form-group select,.form-group textarea{width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;font-size:.95rem;transition:border-color .2s;background:#fff}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px rgba(79,110,247,.12)}
+.form-group .input-icon{position:relative}
+.form-group .input-icon input{padding-left:40px}
+.form-group .input-icon .icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-secondary);font-size:1.1rem}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 20px;border:none;border-radius:8px;font-size:.95rem;font-weight:500;transition:all .2s}
+.btn-primary{background:var(--primary);color:#fff}
+.btn-primary:hover{background:var(--primary-dark)}
+.btn-success{background:var(--success);color:#fff}
+.btn-warning{background:var(--warning);color:#fff}
+.btn-danger{background:var(--danger);color:#fff}
+.btn-outline{background:transparent;border:1.5px solid var(--border);color:var(--text)}
+.btn-outline:hover{border-color:var(--primary);color:var(--primary)}
+.btn-block{width:100%}
+.btn-sm{padding:6px 12px;font-size:.85rem}
+.login-extra{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;font-size:.85rem}
+.login-extra label{display:flex;align-items:center;gap:6px;cursor:pointer}
+.login-card .footer-text{text-align:center;margin-top:24px;color:var(--text-secondary);font-size:.8rem}
+
+/* ===== LAYOUT ===== */
+.app-layout{display:flex;min-height:100vh}
+.app-layout.active{display:flex}
+.sidebar{width:var(--sidebar-w);background:#1e293b;color:#fff;position:fixed;top:0;left:0;bottom:0;z-index:100;transition:transform .3s;display:flex;flex-direction:column}
+.sidebar-header{padding:16px 20px;border-bottom:1px solid rgba(255,255,255,.1);display:flex;align-items:center;gap:12px}
+.sidebar-header .logo-icon{font-size:1.6rem}
+.sidebar-header h2{font-size:1rem;font-weight:600;white-space:nowrap}
+.sidebar-nav{flex:1;padding:12px 0;overflow-y:auto}
+.sidebar-nav .nav-item{display:flex;align-items:center;gap:12px;padding:11px 20px;color:rgba(255,255,255,.7);cursor:pointer;transition:all .2s;font-size:.92rem;border-left:3px solid transparent}
+.sidebar-nav .nav-item:hover{background:rgba(255,255,255,.06);color:#fff}
+.sidebar-nav .nav-item.active{background:rgba(79,110,247,.2);color:#fff;border-left-color:var(--primary)}
+.sidebar-nav .nav-item .nav-icon{font-size:1.15rem;width:22px;text-align:center}
+.sidebar-nav .nav-section{padding:8px 20px 4px;font-size:.75rem;text-transform:uppercase;color:rgba(255,255,255,.35);letter-spacing:.5px}
+.sidebar-footer{padding:16px 20px;border-top:1px solid rgba(255,255,255,.1)}
+.sidebar-footer .user-info{display:flex;align-items:center;gap:10px}
+.sidebar-footer .avatar{width:34px;height:34px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center;font-size:.85rem;font-weight:600}
+.sidebar-footer .user-name{font-size:.85rem}
+.sidebar-footer .user-role{font-size:.75rem;color:rgba(255,255,255,.5)}
+
+.main-content{margin-left:var(--sidebar-w);flex:1;min-height:100vh;display:flex;flex-direction:column}
+.header{height:var(--header-h);background:var(--card);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:sticky;top:0;z-index:50}
+.header .menu-toggle{display:none;background:none;border:none;font-size:1.4rem;color:var(--text)}
+.header .page-title{font-size:1.1rem;font-weight:600}
+.header .header-actions{display:flex;align-items:center;gap:16px}
+.header .header-actions .icon-btn{background:none;border:none;font-size:1.2rem;color:var(--text-secondary);position:relative;padding:6px}
+.header .header-actions .badge{position:absolute;top:2px;right:2px;width:8px;height:8px;background:var(--danger);border-radius:50%}
+
+.page-content{flex:1;padding:24px}
+
+/* ===== CARDS & STATS ===== */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;margin-bottom:24px}
+.stat-card{background:var(--card);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow);transition:transform .2s}
+.stat-card:hover{transform:translateY(-2px)}
+.stat-card .stat-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px}
+.stat-card .stat-icon{width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.3rem}
+.stat-card .stat-icon.blue{background:var(--primary-light);color:var(--primary)}
+.stat-card .stat-icon.green{background:#dcfce7;color:var(--success)}
+.stat-card .stat-icon.yellow{background:#fef3c7;color:var(--warning)}
+.stat-card .stat-icon.red{background:#fee2e2;color:var(--danger)}
+.stat-card .stat-trend{font-size:.8rem;padding:2px 8px;border-radius:20px;font-weight:500}
+.stat-card .stat-trend.up{background:#dcfce7;color:#16a34a}
+.stat-card .stat-trend.down{background:#fee2e2;color:#dc2626}
+.stat-card .stat-value{font-size:1.8rem;font-weight:700;margin-bottom:4px}
+.stat-card .stat-label{color:var(--text-secondary);font-size:.85rem}
+
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:24px}
+.card-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.card-header h3{font-size:1rem;font-weight:600}
+.card-body{padding:20px}
+.card-body.no-padding{padding:0}
+
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:24px}
+
+/* ===== TABLE ===== */
+.table-toolbar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px}
+.table-toolbar .search-box{position:relative}
+.table-toolbar .search-box input{padding:8px 12px 8px 36px;border:1.5px solid var(--border);border-radius:8px;width:260px;font-size:.9rem}
+.table-toolbar .search-box input:focus{outline:none;border-color:var(--primary)}
+.table-toolbar .search-box .search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text-secondary)}
+.table-toolbar .toolbar-actions{display:flex;gap:8px}
+.table-wrapper{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+table th{background:#f8fafc;padding:12px 16px;text-align:left;font-weight:600;font-size:.85rem;color:var(--text-secondary);border-bottom:2px solid var(--border);white-space:nowrap}
+table td{padding:12px 16px;border-bottom:1px solid var(--border);font-size:.9rem}
+table tbody tr:hover{background:#f8fafc}
+table .tag{display:inline-block;padding:2px 10px;border-radius:20px;font-size:.8rem;font-weight:500}
+.tag-success{background:#dcfce7;color:#16a34a}
+.tag-warning{background:#fef3c7;color:#b45309}
+.tag-danger{background:#fee2e2;color:#dc2626}
+.tag-info{background:var(--primary-light);color:var(--primary)}
+.pagination{display:flex;justify-content:space-between;align-items:center;padding:12px 0}
+.pagination .info{color:var(--text-secondary);font-size:.85rem}
+.pagination .pages{display:flex;gap:4px}
+.pagination .pages button{width:34px;height:34px;border:1px solid var(--border);border-radius:6px;background:#fff;font-size:.85rem;display:flex;align-items:center;justify-content:center}
+.pagination .pages button.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+.pagination .pages button:hover:not(.active){background:#f3f4f6}
+
+/* ===== FORM ===== */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px 24px}
+.form-grid .full-width{grid-column:1/-1}
+.form-actions{display:flex;gap:12px;justify-content:flex-end;margin-top:24px;padding-top:20px;border-top:1px solid var(--border)}
+.form-section{margin-bottom:24px}
+.form-section h4{font-size:.95rem;font-weight:600;margin-bottom:16px;padding-bottom:8px;border-bottom:1px solid var(--border);color:var(--primary)}
+
+/* ===== MODAL ===== */
+.modal-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:200;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.active{display:flex}
+.modal{background:#fff;border-radius:12px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow-lg)}
+.modal-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.modal-header h3{font-size:1.05rem;font-weight:600}
+.modal-header .close-btn{background:none;border:none;font-size:1.3rem;color:var(--text-secondary)}
+.modal-body{padding:20px}
+.modal-footer{padding:16px 20px;border-top:1px solid var(--border);display:flex;gap:12px;justify-content:flex-end}
+
+/* ===== CHART ===== */
+.chart-container{position:relative;height:300px;width:100%}
+.chart-container.sm{height:240px}
+
+/* ===== TOAST ===== */
+.toast-container{position:fixed;top:20px;right:20px;z-index:300;display:flex;flex-direction:column;gap:8px}
+.toast{padding:12px 20px;border-radius:8px;color:#fff;font-size:.9rem;box-shadow:var(--shadow-lg);animation:slideIn .3s ease}
+.toast-success{background:#16a34a}
+.toast-error{background:#dc2626}
+.toast-info{background:var(--primary)}
+@keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+
+/* ===== RESPONSIVE ===== */
+@media(max-width:1024px){
+  .stats-grid{grid-template-columns:repeat(2,1fr)}
+  .grid-2,.grid-3{grid-template-columns:1fr}
+  .form-grid{grid-template-columns:1fr}
+}
+@media(max-width:768px){
+  .sidebar{transform:translateX(-100%)}
+  .sidebar.open{transform:translateX(0)}
+  .sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:99}
+  .sidebar-overlay.open{display:block}
+  .main-content{margin-left:0}
+  .header .menu-toggle{display:block}
+  .page-content{padding:16px}
+  .stats-grid{grid-template-columns:1fr}
+  .table-toolbar{flex-direction:column;align-items:stretch}
+  .table-toolbar .search-box input{width:100%}
+  .header .page-title{font-size:.95rem}
+}
+
+/* ===== MISC ===== */
+.page{display:none}
+.page.active{display:block}
+.text-center{text-align:center}
+.text-right{text-align:right}
+.text-muted{color:var(--text-secondary)}
+.mt-16{margin-top:16px}
+.mb-16{margin-bottom:16px}
+.flex-between{display:flex;justify-content:space-between;align-items:center}
+.gap-8{gap:8px}
+.info-grid{display:grid;grid-template-columns:120px 1fr;gap:8px 16px;font-size:.9rem}
+.info-grid dt{color:var(--text-secondary);font-weight:500}
+.info-grid dd{font-weight:500}
+.progress-bar{height:8px;background:#e5e7eb;border-radius:4px;overflow:hidden}
+.progress-bar .fill{height:100%;border-radius:4px;transition:width .5s}
+
+/* ===== ZONE TABS ===== */
+.zone-tabs{display:flex;gap:0;margin-bottom:24px;background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+.zone-tab{flex:1;padding:14px 24px;text-align:center;cursor:pointer;font-weight:600;font-size:1rem;border:none;background:transparent;color:var(--text-secondary);transition:all .25s;border-bottom:3px solid transparent}
+.zone-tab:hover{background:#f8fafc;color:var(--text)}
+.zone-tab.active{color:var(--primary);border-bottom-color:var(--primary);background:var(--primary-light)}
+.zone-tab .zone-badge{display:inline-block;padding:2px 10px;border-radius:20px;font-size:.75rem;font-weight:500;margin-left:8px;vertical-align:middle}
+.zone-tab .zone-badge.renew{background:#dbeafe;color:#2563eb}
+.zone-tab .zone-badge.new{background:#fce7f3;color:#db2777}
+.zone-panel{display:none}
+.zone-panel.active{display:block}
+</style>
+</head>
+<body>
+
+
+<!-- ===== APP LAYOUT ===== -->
+<div class="app-layout active" id="appLayout">
+  <!-- Sidebar Overlay (mobile) -->
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+  
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <span class="logo-icon">&#127981;</span>
+      <h2>项目管理系统</h2>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section">主菜单</div>
+      <div class="nav-item active" onclick="navigateTo('dashboard')">
+        <span class="nav-icon">&#128202;</span> 数据看板
+      </div>
+      <div class="nav-item" onclick="navigateTo('projects')">
+        <span class="nav-icon">&#128196;</span> 项目列表
+      </div>
+      <div class="nav-item" onclick="navigateTo('finance')">
+        <span class="nav-icon">&#128176;</span> 财务分析
+      </div>
+      <div class="nav-item" onclick="navigateTo('staff')">
+        <span class="nav-icon">&#128101;</span> 人车配置
+      </div>
+      <div class="nav-section">管理</div>
+      <div class="nav-item" onclick="navigateTo('risks')">
+        <span class="nav-icon">&#9888;&#65039;</span> 风险预警
+      </div>
+      <div class="nav-item" onclick="navigateTo('settings')">
+        <span class="nav-icon">&#9881;&#65039;</span> 基础信息
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-info">
+        <div class="avatar">管</div>
+        <div>
+          <div class="user-name">管理员</div>
+          <div class="user-role">系统管理员</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="main-content">
+    <header class="header">
+      <button class="menu-toggle" onclick="toggleSidebar()">&#9776;</button>
+      <span class="page-title" id="pageTitle">数据看板</span>
+      <div class="header-actions">
+        <button class="icon-btn">&#128276;<span class="badge"></span></button>
+      </div>
+    </header>
+
+    <div class="page-content">
+
+      <!-- ===== DASHBOARD ===== -->
+      <div class="page active" id="page-dashboard">
+        <div class="zone-tabs">
+          <button class="zone-tab active" onclick="switchZone('east')">&#9650; 东区项目 <span class="zone-badge renew">续标</span></button>
+          <button class="zone-tab" onclick="switchZone('west')">&#9650; 西区项目 <span class="zone-badge new">新增</span></button>
+        </div>
+
+        <!-- ===== 东区 ===== -->
+        <div class="zone-panel active" id="zone-east">
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-header"><div class="stat-icon blue">&#128176;</div><span class="stat-trend down">&#8595; 29%</span></div>
+              <div class="stat-value">970.8<span style="font-size:.85rem;font-weight:400"> 万/年</span></div>
+              <div class="stat-label">新合同年收入（含税）</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-header"><div class="stat-icon green">&#128200;</div></div>
+              <div class="stat-value">6.72<span style="font-size:.85rem;font-weight:400">%</span></div>
+              <div class="stat-label">平均净利润率（推荐方案三）</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-header"><div class="stat-icon yellow">&#128101;</div></div>
+              <div class="stat-value">88<span style="font-size:.85rem;font-weight:400"> 人</span></div>
+              <div class="stat-label">人员配置（作业81 + 管理7）</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-header"><div class="stat-icon red">&#128666;</div></div>
+              <div class="stat-value">23<span style="font-size:.85rem;font-weight:400"> 辆</span></div>
+              <div class="stat-label">车辆缺口（配置15 vs 招标38）</div>
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-header"><h3>历年收入与利润趋势</h3></div>
+              <div class="card-body"><div class="chart-container"><canvas id="chart-east-revenue"></canvas></div></div>
+            </div>
+            <div class="card">
+              <div class="card-header"><h3>三方案利润率对比</h3></div>
+              <div class="card-body"><div class="chart-container"><canvas id="chart-east-scenarios"></canvas></div></div>
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-header"><h3>服务费新旧对比</h3></div>
+              <div class="card-body"><div class="chart-container"><canvas id="chart-east-service"></canvas></div></div>
+            </div>
+            <div class="card">
+              <div class="card-header"><h3>投资构成（推荐方案三）</h3></div>
+              <div class="card-body"><div class="chart-container"><canvas id="chart-east-invest" data-unit="万元"></canvas></div></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><h3>三方案完整数据对比</h3></div>
+            <div class="card-body no-padding">
+              <div class="table-wrapper">
+                <table>
+                  <thead><tr><th>指标</th><th>方案一（新购）</th><th>方案二（租赁）</th><th style="background:#eef7ee">方案三（推荐）</th></tr></thead>
+                  <tbody>
+                    <tr><td><strong>业务收入含税（万元）</strong></td><td>970.80</td><td>970.80</td><td style="background:#f8fdf8">970.80</td></tr>
+                    <tr><td><strong>业务收入不含税（万元）</strong></td><td>915.85</td><td>915.85</td><td style="background:#f8fdf8">915.85</td></tr>
+                    <tr><td><strong>平均净利润（万元）</strong></td><td style="color:var(--danger)">-148.92</td><td style="color:var(--danger)">-130.98</td><td style="color:var(--success);background:#f8fdf8"><strong>61.56</strong></td></tr>
+                    <tr><td><strong>平均净利润率</strong></td><td style="color:var(--danger)">-16.26%</td><td style="color:var(--danger)">-14.30%</td><td style="color:var(--success);background:#f8fdf8"><strong>6.72%</strong></td></tr>
+                    <tr><td><strong>最低净利润率</strong></td><td style="color:var(--danger)">-17.19%</td><td style="color:var(--danger)">-15.27%</td><td style="color:var(--warning);background:#f8fdf8">6.02%</td></tr>
+                    <tr><td><strong>内部收益率（税后）</strong></td><td style="color:var(--danger)">-11.56%</td><td>—</td><td style="color:var(--success);background:#f8fdf8"><strong>28.38%</strong></td></tr>
+                    <tr><td><strong>新购设备投资占比</strong></td><td style="color:var(--danger)">155.04%</td><td>13.24%</td><td style="color:var(--success);background:#f8fdf8">6.5%</td></tr>
+                    <tr><td><strong>投资总额（万元）</strong></td><td>1,678.32</td><td>285.55</td><td style="background:#f8fdf8"><strong>236.97</strong></td></tr>
+                    <tr><td><strong>作业人员</strong></td><td>81 人</td><td>81 人</td><td style="background:#f8fdf8">81 人</td></tr>
+                    <tr><td><strong>管理人员</strong></td><td>8 人</td><td>8 人</td><td style="background:#f8fdf8">7 人</td></tr>
+                    <tr><td><strong>车辆配置</strong></td><td>38 辆（达标）</td><td>38 辆（达标）</td><td style="background:#f8fdf8">15 辆（差23辆）</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== 西区 ===== -->
+        <div class="zone-panel" id="zone-west">
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-header"><div class="stat-icon blue">&#128176;</div></div>
+              <div class="stat-value">1,176.0<span style="font-size:.85rem;font-weight:400"> 万/年</span></div>
+              <div class="stat-label">年收入（含税）</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-header"><div class="stat-icon green">&#128200;</div></div>
+              <div class="stat-value">8.38<span style="font-size:.85rem;font-weight:400">%</span></div>
+              <div class="stat-label">平均净利润率（推荐方案三）</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-header"><div class="stat-icon yellow">&#128101;</div></div>
+              <div class="stat-value">99<span style="font-size:.85rem;font-weight:400"> 人</span></div>
+              <div class="stat-label">人员配置（作业91 + 管理8）</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-header"><div class="stat-icon red">&#128666;</div></div>
+              <div class="stat-value">32<span style="font-size:.85rem;font-weight:400"> 辆</span></div>
+              <div class="stat-label">车辆缺口（配置13 vs 招标45）</div>
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-header"><h3>三方案利润率对比</h3></div>
+              <div class="card-body"><div class="chart-container"><canvas id="chart-west-scenarios"></canvas></div></div>
+            </div>
+            <div class="card">
+              <div class="card-header"><h3>投资构成（推荐方案三）</h3></div>
+              <div class="card-body"><div class="chart-container"><canvas id="chart-west-invest" data-unit="万元"></canvas></div></div>
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-header"><h3>三方案投资总额对比</h3></div>
+              <div class="card-body"><div class="chart-container"><canvas id="chart-west-total-invest"></canvas></div></div>
+            </div>
+            <div class="card">
+              <div class="card-header"><h3>人车配置概览</h3></div>
+              <div class="card-body"><div class="chart-container"><canvas id="chart-west-staff"></canvas></div></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><h3>三方案完整数据对比</h3></div>
+            <div class="card-body no-padding">
+              <div class="table-wrapper">
+                <table>
+                  <thead><tr><th>指标</th><th>方案一（新购）</th><th>方案二（租赁）</th><th style="background:#eef7ee">方案三（推荐）</th></tr></thead>
+                  <tbody>
+                    <tr><td><strong>业务收入含税（万元）</strong></td><td>1,176.00</td><td>1,176.00</td><td style="background:#f8fdf8">1,176.00</td></tr>
+                    <tr><td><strong>业务收入不含税（万元）</strong></td><td>1,109.43</td><td>1,109.43</td><td style="background:#f8fdf8">1,109.43</td></tr>
+                    <tr><td><strong>平均净利润（万元）</strong></td><td style="color:var(--danger)">-86.19</td><td style="color:var(--danger)">-107.31</td><td style="color:var(--success);background:#f8fdf8"><strong>92.95</strong></td></tr>
+                    <tr><td><strong>平均净利润率</strong></td><td style="color:var(--danger)">-7.77%</td><td style="color:var(--danger)">-9.67%</td><td style="color:var(--success);background:#f8fdf8"><strong>8.38%</strong></td></tr>
+                    <tr><td><strong>最低净利润率</strong></td><td style="color:var(--danger)">-10.70%</td><td style="color:var(--danger)">-10.52%</td><td style="color:var(--warning);background:#f8fdf8">7.75%</td></tr>
+                    <tr><td><strong>内部收益率（税后）</strong></td><td style="color:var(--danger)">-3.17%</td><td style="color:var(--danger)">-26.16%</td><td style="color:var(--success);background:#f8fdf8"><strong>30.07%</strong></td></tr>
+                    <tr><td><strong>新购设备投资占比</strong></td><td style="color:var(--danger)">173.67%</td><td>17.35%</td><td style="color:var(--success);background:#f8fdf8">9.22%</td></tr>
+                    <tr><td><strong>投资总额（万元）</strong></td><td>2,300.74</td><td>435.11</td><td style="background:#f8fdf8"><strong>357.34</strong></td></tr>
+                    <tr><td><strong>作业人员</strong></td><td>76 人</td><td>76 人</td><td style="background:#f8fdf8">91 人</td></tr>
+                    <tr><td><strong>管理人员</strong></td><td>8 人</td><td>8 人</td><td style="background:#f8fdf8">8 人</td></tr>
+                    <tr><td><strong>车辆配置</strong></td><td>45 辆（达标）</td><td>45 辆（达标）</td><td style="background:#f8fdf8">13 辆（差32辆）</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== PROJECTS LIST ===== -->
+      <div class="page" id="page-projects">
+        <div class="card">
+          <div class="card-header">
+            <h3>项目列表</h3>
+            <button class="btn btn-primary btn-sm" onclick="showAddProject()">+ 新增项目</button>
+          </div>
+          <div class="card-body">
+            <div class="table-toolbar">
+              <div class="search-box">
+                <span class="search-icon">&#128269;</span>
+                <input type="text" id="projectSearch" placeholder="搜索项目名称..." oninput="filterProjects()">
+              </div>
+              <div class="toolbar-actions">
+                <select class="btn btn-outline btn-sm" id="statusFilter" onchange="filterProjects()" style="padding:6px 12px">
+                  <option value="">全部状态</option>
+                  <option value="运营中">运营中</option>
+                  <option value="投标中">投标中</option>
+                  <option value="已完工">已完工</option>
+                </select>
+                <button class="btn btn-outline btn-sm" onclick="exportData()">&#128229; 导出</button>
+              </div>
+            </div>
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>项目名称</th>
+                    <th>区域</th>
+                    <th>年收入(万元)</th>
+                    <th>利润率</th>
+                    <th>服务期限</th>
+                    <th>状态</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody id="projectTableBody"></tbody>
+              </table>
+            </div>
+            <div class="pagination">
+              <span class="info" id="paginationInfo">共 6 条记录</span>
+              <div class="pages">
+                <button class="active">1</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== FINANCE ===== -->
+      <div class="page" id="page-finance">
+        <div class="stats-grid" style="grid-template-columns:repeat(3,1fr)">
+          <div class="stat-card">
+            <div class="stat-header"><div class="stat-icon blue">&#128176;</div></div>
+            <div class="stat-value">2,926.9<span style="font-size:.85rem;font-weight:400"> 万元</span></div>
+            <div class="stat-label">三年合同总价（东区）</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-header"><div class="stat-icon green">&#128200;</div></div>
+            <div class="stat-value">3,528.0<span style="font-size:.85rem;font-weight:400"> 万元</span></div>
+            <div class="stat-label">三年合同总价（西区）</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-header"><div class="stat-icon yellow">&#9888;&#65039;</div></div>
+            <div class="stat-value">408.18<span style="font-size:.85rem;font-weight:400"> 万元/年</span></div>
+            <div class="stat-label">东区较原合同减少</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><h3>东区经营数据（2023-2026H1）</h3></div>
+          <div class="card-body no-padding">
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr><th>指标</th><th>2023年</th><th>2024年</th><th>2025年</th><th>2026上半年</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td><strong>收入（万元）</strong></td><td>420.63</td><td>1,291.19</td><td>1,392.82</td><td>702.21</td></tr>
+                  <tr><td><strong>净利润（万元）</strong></td><td>30.37</td><td>209.67</td><td>226.87</td><td>162.58</td></tr>
+                  <tr><td><strong>净利率</strong></td><td>7.22%</td><td>16.24%</td><td>16.29%</td><td>23.15%</td></tr>
+                  <tr><td><strong>当期回款率</strong></td><td>-</td><td>93%</td><td>100%</td><td>111.65%</td></tr>
+                  <tr><td><strong>累计回款率</strong></td><td>-</td><td>93%</td><td>92.62%</td><td>100%</td></tr>
+                  <tr><td><strong>逾期金额（万元）</strong></td><td>-</td><td>111.44</td><td>111.44</td><td>0</td></tr>
+                  <tr><td><strong>扣款（万元）</strong></td><td>-</td><td>9.73</td><td>0</td><td>-</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><h3>三方案成本利润对比（东区）</h3></div>
+          <div class="card-body no-padding">
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr><th>指标</th><th>方案一（新购）</th><th>方案二（租赁）</th><th>方案三（推荐）</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td><strong>业务收入含税（万元）</strong></td><td>970.80</td><td>970.80</td><td>970.80</td></tr>
+                  <tr><td><strong>业务收入不含税（万元）</strong></td><td>915.85</td><td>915.85</td><td>915.85</td></tr>
+                  <tr><td><strong>平均净利润（万元）</strong></td><td class="text-danger" style="color:var(--danger)">-148.92</td><td style="color:var(--danger)">-130.98</td><td style="color:var(--success)">61.56</td></tr>
+                  <tr><td><strong>平均净利润率</strong></td><td style="color:var(--danger)">-16.26%</td><td style="color:var(--danger)">-14.30%</td><td style="color:var(--success)">6.72%</td></tr>
+                  <tr><td><strong>最低净利润率</strong></td><td style="color:var(--danger)">-17.19%</td><td style="color:var(--danger)">-15.27%</td><td style="color:var(--warning)">6.02%</td></tr>
+                  <tr><td><strong>内部收益率（税后）</strong></td><td style="color:var(--danger)">-11.56%</td><td>-</td><td style="color:var(--success)">28.38%</td></tr>
+                  <tr><td><strong>新购设备投资占比</strong></td><td style="color:var(--danger)">155.04%</td><td>13.24%</td><td style="color:var(--success)">6.5%</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><h3>三方案成本利润对比（西区）</h3></div>
+          <div class="card-body no-padding">
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr><th>指标</th><th>方案一（新购）</th><th>方案二（租赁）</th><th>方案三（推荐）</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td><strong>业务收入含税（万元）</strong></td><td>1,176.00</td><td>1,176.00</td><td>1,176.00</td></tr>
+                  <tr><td><strong>业务收入不含税（万元）</strong></td><td>1,109.43</td><td>1,109.43</td><td>1,109.43</td></tr>
+                  <tr><td><strong>平均净利润（万元）</strong></td><td style="color:var(--danger)">-86.19</td><td style="color:var(--danger)">-107.31</td><td style="color:var(--success)">92.95</td></tr>
+                  <tr><td><strong>平均净利润率</strong></td><td style="color:var(--danger)">-7.77%</td><td style="color:var(--danger)">-9.67%</td><td style="color:var(--success)">8.38%</td></tr>
+                  <tr><td><strong>最低净利润率</strong></td><td style="color:var(--danger)">-10.70%</td><td style="color:var(--danger)">-10.52%</td><td style="color:var(--warning)">7.75%</td></tr>
+                  <tr><td><strong>内部收益率（税后）</strong></td><td style="color:var(--danger)">-3.17%</td><td style="color:var(--danger)">-26.16%</td><td style="color:var(--success)">30.07%</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== STAFF ===== -->
+      <div class="page" id="page-staff">
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-header"><h3>人员配置（东区）</h3></div>
+            <div class="card-body">
+              <div class="info-grid">
+                <dt>原作业人员</dt><dd>108 人</dd>
+                <dt>优化后作业</dt><dd>81 人</dd>
+                <dt>管理人员</dt><dd>7~8 人</dd>
+                <dt>预计优化</dt><dd style="color:var(--success)">27 人</dd>
+              </div>
+              <div class="chart-container sm" style="margin-top:20px"><canvas id="chart-staff-east"></canvas></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><h3>人员配置（西区）</h3></div>
+            <div class="card-body">
+              <div class="info-grid">
+                <dt>方案三管理人员</dt><dd>8 人</dd>
+                <dt>方案三作业人员</dt><dd>91 人</dd>
+                <dt>方案一二作业</dt><dd>76 人</dd>
+                <dt>差异原因</dt><dd>道路清扫保洁员</dd>
+              </div>
+              <div class="chart-container sm" style="margin-top:20px"><canvas id="chart-staff-west"></canvas></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><h3>车辆配置对比</h3></div>
+          <div class="card-body no-padding">
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr><th>区域</th><th>招标建议</th><th>方案一/二</th><th>方案三（推荐）</th><th>缺口</th></tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>东区</strong></td>
+                    <td>38 辆（环卫27+绿化11）</td>
+                    <td>38 辆（符合要求）</td>
+                    <td>15 辆（原有11+内部租赁4）</td>
+                    <td><span class="tag tag-danger">差 23 辆</span></td>
+                  </tr>
+                  <tr>
+                    <td><strong>西区</strong></td>
+                    <td>45 辆（环卫33+绿化12）</td>
+                    <td>45 辆（符合要求）</td>
+                    <td>13 辆（内部租赁11+新购2）</td>
+                    <td><span class="tag tag-danger">差 32 辆</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== RISKS ===== -->
+      <div class="page" id="page-risks">
+        <div class="card">
+          <div class="card-header"><h3>风险预警清单</h3></div>
+          <div class="card-body">
+            <div id="riskList"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== SETTINGS ===== -->
+      <div class="page" id="page-settings">
+        <div class="card">
+          <div class="card-header"><h3>基础信息</h3></div>
+          <div class="card-body">
+            <form onsubmit="handleSaveSettings(event)">
+              <div class="form-section">
+                <h4>采购信息</h4>
+                <div class="form-grid">
+                  <div class="form-group">
+                    <label>采购方式</label>
+                    <input type="text" value="公开招标">
+                  </div>
+                  <div class="form-group">
+                    <label>开标日期</label>
+                    <input type="date" value="2026-09-10">
+                  </div>
+                  <div class="form-group">
+                    <label>采购主体</label>
+                    <input type="text" value="西宁经济技术开发区甘河工业园区管理委员会">
+                  </div>
+                  <div class="form-group">
+                    <label>投标主体</label>
+                    <input type="text" value="北控城市环境服务集团有限公司">
+                  </div>
+                </div>
+              </div>
+              <div class="form-section">
+                <h4>东区项目报价</h4>
+                <div class="form-grid">
+                  <div class="form-group">
+                    <label>招标限制价（万元/年）</label>
+                    <input type="number" value="975.6383" step="0.0001">
+                  </div>
+                  <div class="form-group">
+                    <label>拟投标价格（万元/年）</label>
+                    <input type="number" value="970.8" step="0.1">
+                  </div>
+                </div>
+              </div>
+              <div class="form-section">
+                <h4>西区项目报价</h4>
+                <div class="form-grid">
+                  <div class="form-group">
+                    <label>招标限制价（万元/年）</label>
+                    <input type="number" value="" step="0.0001" placeholder="请输入西区招标限制价">
+                  </div>
+                  <div class="form-group">
+                    <label>拟投标价格（万元/年）</label>
+                    <input type="number" value="1176" step="0.1">
+                  </div>
+                </div>
+              </div>
+              <div class="form-section">
+                <h4>服务信息</h4>
+                <div class="form-grid">
+                  <div class="form-group">
+                    <label>项目模式</label>
+                    <select>
+                      <option selected>政府采购服务</option>
+                      <option>PPP</option>
+                      <option>特许经营</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label>服务期限</label>
+                    <select>
+                      <option selected>三年（1+1+1）</option>
+                      <option>五年</option>
+                      <option>一年</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label>付费方式</label>
+                    <input type="text" value="按月考核，按季支付">
+                  </div>
+                  <div class="form-group">
+                    <label>服务费来源</label>
+                    <input type="text" value="财政资金">
+                  </div>
+                  <div class="form-group full-width">
+                    <label>考核方式</label>
+                    <textarea rows="3">季度考核，以一个季度（三个月）为一个考核周期。园区季度考核得分=季度内月考核得分平均值*80%+园区相关局办综合评价10%+群众满意度调查*5%+重大应急事件响应得分*5%。</textarea>
+                  </div>
+                </div>
+              </div>
+              <div class="form-section">
+                <h4>保证金</h4>
+                <div class="form-grid">
+                  <div class="form-group">
+                    <label>投标保证金</label>
+                    <input type="text" value="无">
+                  </div>
+                  <div class="form-group">
+                    <label>履约保证金</label>
+                    <input type="text" value="年度合同金额的10%">
+                  </div>
+                </div>
+              </div>
+              <div class="form-actions">
+                <button type="button" class="btn btn-outline">重置</button>
+                <button type="submit" class="btn btn-primary">保存</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /page-content -->
+  </div><!-- /main-content -->
+</div><!-- /app-layout -->
+
+<!-- ===== ADD/EDIT PROJECT MODAL ===== -->
+<div class="modal-overlay" id="projectModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modalTitle">新增项目</h3>
+      <button class="close-btn" onclick="closeModal('projectModal')">&times;</button>
+    </div>
+    <div class="modal-body">
+      <form id="projectForm" onsubmit="handleSaveProject(event)">
+        <div class="form-group">
+          <label>项目名称</label>
+          <input type="text" id="f_name" required placeholder="输入项目名称">
+        </div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>所属区域</label>
+            <select id="f_area">
+              <option>东区</option><option>西区</option><option>全区</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>年收入（万元）</label>
+            <input type="number" id="f_revenue" step="0.01" placeholder="0.00">
+          </div>
+          <div class="form-group">
+            <label>利润率（%）</label>
+            <input type="number" id="f_profit" step="0.01" placeholder="0.00">
+          </div>
+          <div class="form-group">
+            <label>服务期限</label>
+            <input type="text" id="f_term" placeholder="如：三年（1+1+1）">
+          </div>
+          <div class="form-group">
+            <label>状态</label>
+            <select id="f_status">
+              <option>运营中</option><option>投标中</option><option>已完工</option><option>筹备中</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>负责人</label>
+            <input type="text" id="f_manager" placeholder="项目负责人">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>备注</label>
+          <textarea id="f_remark" rows="2" placeholder="补充说明"></textarea>
+        </div>
+        <input type="hidden" id="f_id">
+        <div class="modal-footer" style="padding:0;border:0;margin-top:16px">
+          <button type="button" class="btn btn-outline" onclick="closeModal('projectModal')">取消</button>
+          <button type="submit" class="btn btn-primary">保存</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+// ===== DATA =====
+let projects = [
+  {id:1, name:'甘河工业园东区环卫绿化（续标）', area:'东区', revenue:970.80, profit:6.72, term:'三年（1+1+1）', status:'投标中', manager:'张经理', remark:'推荐方案三，利润率6.72%'},
+  {id:2, name:'甘河工业园西区环卫绿化（新增）', area:'西区', revenue:1176.00, profit:8.38, term:'三年（1+1+1）', status:'投标中', manager:'李经理', remark:'推荐方案三，利润率8.38%'},
+  {id:3, name:'甘河工业园东区运营（2023-2026）', area:'东区', revenue:1392.82, profit:16.29, term:'三年', status:'运营中', manager:'王经理', remark:'当前运营期，截至2026年6月'},
+  {id:4, name:'东区清扫保洁专项', area:'东区', revenue:428.30, profit:null, term:'三年', status:'运营中', manager:'张经理', remark:'67.77万平方米'},
+  {id:5, name:'东区绿化养护专项', area:'东区', revenue:531.34, profit:null, term:'三年', status:'运营中', manager:'张经理', remark:'96.68万平方米'},
+  {id:6, name:'西区清扫保洁专项', area:'西区', revenue:null, profit:null, term:'三年', status:'筹备中', manager:'李经理', remark:'84.7万平方米'},
+];
+
+const risks = [
+  {level:'high', title:'招标条件与实际需求不匹配', desc:'招标文件对于车辆配置有建议数量（非强制要求）；测算按照车辆配置满足招标要求将面临亏损，不满足招标要求则可能存在后续运营中被甲方考核处罚或降费风险。', area:'东区'},
+  {level:'high', title:'降收降利风险', desc:'新合同收入970.80万元/年对原主合同1378.98万元/年（含税）实际减少408.18万元/年；平均净利润率6.72%（一般要求高于8%），对比2024年16.14%下降一倍以上。', area:'东区'},
+  {level:'high', title:'突发降费降利风险', desc:'方案三：若第三年降费5%，三年平均收益率7.21%；若降费10%，收益率5.9%。如遇到突发降费超10%，将面临不满足集团一般要求8%的降利风险。', area:'西区'},
+  {level:'medium', title:'车辆冗余/闲置风险', desc:'测算接收原有车辆11辆与台账在用车辆20辆数量相差9辆，存在车辆闲置（冗余）或配置不合理的可能。需进一步核实车辆实际状态。', area:'东区'},
+  {level:'medium', title:'人车配置不确定性', desc:'招标文件对作业人员配置数量没有具体要求，缺少原有人员台账等基础资料，无法逐一对比差异。中标后应尽快复核。', area:'西区'},
+  {level:'medium', title:'回款及调价风险', desc:'项目为季度回款，合同无调价机制，存在延期回款及后期成本上升降利风险。', area:'全区'},
+  {level:'low', title:'一线人员优化风险', desc:'项目拟优化较多一线人员，人均保洁面积增加，考核标准收紧，存在作业质量下降等扣款风险。', area:'东区'},
+];
+
+// ===== AUTO INIT =====
+document.addEventListener('DOMContentLoaded', function(){
+  renderProjects();
+  renderRisks();
+  try{ if(window.Chart) initCharts(); }catch(e){ console.warn('图表初始化失败:',e); }
+});
+
+// ===== NAVIGATION =====
+const pageTitles = {dashboard:'数据看板',projects:'项目列表',finance:'财务分析',staff:'人车配置',risks:'风险预警',settings:'基础信息'};
+function navigateTo(page){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  document.querySelectorAll('.sidebar-nav .nav-item').forEach(n=>{
+    n.classList.remove('active');
+    if((n.getAttribute('onclick')||'').indexOf("navigateTo('"+page+"')")>=0)n.classList.add('active');
+  });
+  document.getElementById('pageTitle').textContent = pageTitles[page]||page;
+  // close sidebar on mobile
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebarOverlay').classList.remove('open');
+  // init sub-charts if needed
+  if(page==='staff') setTimeout(initStaffCharts,100);
+}
+function toggleSidebar(){
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('sidebarOverlay').classList.toggle('open');
+}
+
+// ===== PROJECTS TABLE =====
+function renderProjects(){
+  const search = (document.getElementById('projectSearch').value||'').toLowerCase();
+  const status = document.getElementById('statusFilter').value;
+  const filtered = projects.filter(p=>{
+    if(search && !p.name.toLowerCase().includes(search)) return false;
+    if(status && p.status!==status) return false;
+    return true;
+  });
+  const tbody = document.getElementById('projectTableBody');
+  tbody.innerHTML = filtered.map(p=>{
+    const statusClass = p.status==='运营中'?'tag-success':p.status==='投标中'?'tag-info':p.status==='筹备中'?'tag-warning':'tag-danger';
+    const profitStr = p.profit!==null ? p.profit.toFixed(2)+'%' : '-';
+    const profitColor = p.profit!==null ? (p.profit>=8?'var(--success)':p.profit>=6?'var(--warning)':'var(--danger)') : '';
+    return `<tr>
+      <td><strong>${p.name}</strong></td>
+      <td>${p.area}</td>
+      <td>${p.revenue?p.revenue.toFixed(2):'-'}</td>
+      <td style="color:${profitColor};font-weight:600">${profitStr}</td>
+      <td>${p.term}</td>
+      <td><span class="tag ${statusClass}">${p.status}</span></td>
+      <td>
+        <button class="btn btn-outline btn-sm" onclick="editProject(${p.id})">编辑</button>
+        <button class="btn btn-sm" style="color:var(--danger)" onclick="deleteProject(${p.id})">删除</button>
+      </td>
+    </tr>`;
+  }).join('');
+  document.getElementById('paginationInfo').textContent = `共 ${filtered.length} 条记录`;
+}
+function filterProjects(){ renderProjects(); }
+
+function showAddProject(){
+  document.getElementById('modalTitle').textContent='新增项目';
+  document.getElementById('projectForm').reset();
+  document.getElementById('f_id').value='';
+  document.getElementById('projectModal').classList.add('active');
+}
+function editProject(id){
+  const p = projects.find(x=>x.id===id);
+  if(!p) return;
+  document.getElementById('modalTitle').textContent='编辑项目';
+  document.getElementById('f_id').value=p.id;
+  document.getElementById('f_name').value=p.name;
+  document.getElementById('f_area').value=p.area;
+  document.getElementById('f_revenue').value=p.revenue||'';
+  document.getElementById('f_profit').value=p.profit||'';
+  document.getElementById('f_term').value=p.term;
+  document.getElementById('f_status').value=p.status;
+  document.getElementById('f_manager').value=p.manager||'';
+  document.getElementById('f_remark').value=p.remark||'';
+  document.getElementById('projectModal').classList.add('active');
+}
+function handleSaveProject(e){
+  e.preventDefault();
+  const id = document.getElementById('f_id').value;
+  const data = {
+    name: document.getElementById('f_name').value,
+    area: document.getElementById('f_area').value,
+    revenue: parseFloat(document.getElementById('f_revenue').value)||null,
+    profit: parseFloat(document.getElementById('f_profit').value)||null,
+    term: document.getElementById('f_term').value,
+    status: document.getElementById('f_status').value,
+    manager: document.getElementById('f_manager').value,
+    remark: document.getElementById('f_remark').value,
+  };
+  if(id){
+    const idx = projects.findIndex(p=>p.id==id);
+    if(idx>=0) projects[idx] = {...projects[idx], ...data};
+    showToast('项目信息已更新','success');
+  } else {
+    data.id = Math.max(...projects.map(p=>p.id))+1;
+    projects.push(data);
+    showToast('项目已添加','success');
+  }
+  closeModal('projectModal');
+  renderProjects();
+}
+function deleteProject(id){
+  if(!confirm('确定要删除该项目吗？')) return;
+  projects = projects.filter(p=>p.id!==id);
+  renderProjects();
+  showToast('项目已删除','info');
+}
+function exportData(){
+  showToast('数据导出功能（演示）','info');
+}
+
+// ===== RISKS =====
+function renderRisks(){
+  const colors = {high:'var(--danger)',medium:'var(--warning)',low:'var(--success)'};
+  const labels = {high:'高风险',medium:'中风险',low:'低风险'};
+  const tagClass = {high:'tag-danger',medium:'tag-warning',low:'tag-success'};
+  document.getElementById('riskList').innerHTML = risks.map(r=>`
+    <div style="padding:16px;border:1px solid var(--border);border-radius:8px;margin-bottom:12px;border-left:4px solid ${colors[r.level]}">
+      <div class="flex-between mb-16" style="margin-bottom:8px">
+        <strong>${r.title}</strong>
+        <div><span class="tag ${tagClass[r.level]}">${labels[r.level]}</span> <span class="tag tag-info" style="margin-left:4px">${r.area}</span></div>
+      </div>
+      <p class="text-muted" style="font-size:.9rem;line-height:1.7">${r.desc}</p>
+    </div>
+  `).join('');
+}
+
+// ===== MODAL =====
+function closeModal(id){
+  document.getElementById(id).classList.remove('active');
+}
+
+// ===== TOAST =====
+function showToast(msg, type='info'){
+  const c = document.getElementById('toastContainer');
+  const t = document.createElement('div');
+  t.className = 'toast toast-'+type;
+  t.textContent = msg;
+  c.appendChild(t);
+  setTimeout(()=>t.remove(), 3000);
+}
+
+// ===== SETTINGS =====
+function handleSaveSettings(e){
+  e.preventDefault();
+  showToast('设置已保存','success');
+}
+
+// ===== ZONE SWITCH =====
+let westChartsInit = false;
+function switchZone(zone){
+  document.querySelectorAll('.zone-tab').forEach(t=>{
+    t.classList.remove('active');
+    if((t.getAttribute('onclick')||'').indexOf("switchZone('"+zone+"')")>=0)t.classList.add('active');
+  });
+  document.querySelectorAll('.zone-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('zone-'+zone).classList.add('active');
+  if(zone==='west' && !westChartsInit){
+    westChartsInit=true;
+    setTimeout(initWestCharts,50);
+  }
+}
+
+// ===== CHARTS =====
+function initCharts(){
+  // ---- 东区: 历年收入与利润趋势 ----
+  new Chart(document.getElementById('chart-east-revenue'),{
+    type:'bar',
+    data:{
+      labels:['2023年','2024年','2025年','2026H1'],
+      datasets:[
+        {label:'收入（万元）',data:[420.63,1291.19,1392.82,702.21],backgroundColor:'rgba(79,110,247,0.7)',borderRadius:6,yAxisID:'y'},
+        {label:'净利润（万元）',data:[30.37,209.67,226.87,162.58],backgroundColor:'rgba(34,197,94,0.7)',borderRadius:6,yAxisID:'y'},
+        {label:'净利率（%）',data:[7.22,16.24,16.29,23.15],type:'line',borderColor:'#f59e0b',backgroundColor:'#f59e0b',pointRadius:5,borderWidth:2.5,yAxisID:'y1'}
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'bottom'}},
+      scales:{
+        y:{position:'left',title:{display:true,text:'万元'},grid:{color:'#f0f0f0'}},
+        y1:{position:'right',title:{display:true,text:'%'},grid:{drawOnChartArea:false},min:0,max:30},
+        x:{grid:{display:false}}
+      }
+    }
+  });
+
+  // ---- 东区: 三方案利润率对比 ----
+  new Chart(document.getElementById('chart-east-scenarios'),{
+    type:'bar',
+    data:{
+      labels:['方案一（新购）','方案二（租赁）','方案三（推荐）'],
+      datasets:[
+        {label:'平均净利润率',data:[-16.26,-14.30,6.72],backgroundColor:['#ef4444','#f59e0b','#22c55e'],borderRadius:6},
+        {label:'最低净利润率',data:[-17.19,-15.27,6.02],backgroundColor:['rgba(239,68,68,0.5)','rgba(245,158,11,0.5)','rgba(34,197,94,0.5)'],borderRadius:6}
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'bottom'}},
+      scales:{y:{title:{display:true,text:'%'},grid:{color:'#f0f0f0'}},x:{grid:{display:false}}}
+    }
+  });
+
+  // ---- 东区: 服务费新旧对比 ----
+  new Chart(document.getElementById('chart-east-service'),{
+    type:'bar',
+    data:{
+      labels:['环卫保洁','绿化养护','中转站管理','公厕/智慧/应急'],
+      datasets:[
+        {label:'原合同（万元/年）',data:[524.06,785.6,17.92,51.4],backgroundColor:'rgba(79,110,247,0.6)',borderRadius:6},
+        {label:'新预算控制价（万元/年）',data:[428.3,531.34,16,0],backgroundColor:'rgba(245,158,11,0.7)',borderRadius:6}
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'bottom'}},
+      scales:{y:{title:{display:true,text:'万元/年'},grid:{color:'#f0f0f0'}},x:{grid:{display:false}}}
+    }
+  });
+
+  // ---- 东区: 投资构成（推荐方案三） ----
+  new Chart(document.getElementById('chart-east-invest'),{
+    type:'doughnut',
+    data:{
+      labels:['新购车辆设备','智慧环卫','流动资金'],
+      datasets:[{
+        data:[63.09,0,173.89],
+        backgroundColor:['#4f6ef7','#06b6d4','#22c55e'],
+        borderWidth:2,borderColor:'#fff'
+      }]
+    },
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{padding:12}}}}
+  });
+}
+
+function initWestCharts(){
+  // ---- 西区: 三方案利润率对比 ----
+  new Chart(document.getElementById('chart-west-scenarios'),{
+    type:'bar',
+    data:{
+      labels:['方案一（新购）','方案二（租赁）','方案三（推荐）'],
+      datasets:[
+        {label:'平均净利润率',data:[-7.77,-9.67,8.38],backgroundColor:['#ef4444','#f59e0b','#22c55e'],borderRadius:6},
+        {label:'最低净利润率',data:[-10.70,-10.52,7.75],backgroundColor:['rgba(239,68,68,0.5)','rgba(245,158,11,0.5)','rgba(34,197,94,0.5)'],borderRadius:6}
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'bottom'}},
+      scales:{y:{title:{display:true,text:'%'},grid:{color:'#f0f0f0'}},x:{grid:{display:false}}}
+    }
+  });
+
+  // ---- 西区: 投资构成（推荐方案三） ----
+  new Chart(document.getElementById('chart-west-invest'),{
+    type:'doughnut',
+    data:{
+      labels:['新购车辆设备','智慧环卫','前期开办','流动资金'],
+      datasets:[{
+        data:[102.28,6.12,35.64,213.30],
+        backgroundColor:['#4f6ef7','#06b6d4','#8b5cf6','#22c55e'],
+        borderWidth:2,borderColor:'#fff'
+      }]
+    },
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{padding:12}}}}
+  });
+
+  // ---- 西区: 三方案投资总额对比 ----
+  new Chart(document.getElementById('chart-west-total-invest'),{
+    type:'bar',
+    data:{
+      labels:['方案一（新购）','方案二（租赁）','方案三（推荐）'],
+      datasets:[
+        {label:'新购设备',data:[2017.03,178.73,102.28],backgroundColor:'#4f6ef7',borderRadius:4},
+        {label:'智慧环卫',data:[25.28,25.28,6.12],backgroundColor:'#06b6d4',borderRadius:4},
+        {label:'前期开办',data:[35.64,35.64,35.64],backgroundColor:'#8b5cf6',borderRadius:4},
+        {label:'流动资金',data:[222.79,195.46,213.30],backgroundColor:'#22c55e',borderRadius:4}
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'bottom'}},
+      scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,title:{display:true,text:'万元'},grid:{color:'#f0f0f0'}}}
+    }
+  });
+
+  // ---- 西区: 人车配置概览 ----
+  new Chart(document.getElementById('chart-west-staff'),{
+    type:'bar',
+    data:{
+      labels:['方案一/二','方案三（推荐）','招标建议'],
+      datasets:[
+        {label:'管理人员',data:[8,8,15],backgroundColor:'#4f6ef7',borderRadius:4},
+        {label:'作业人员',data:[76,91,0],backgroundColor:'#22c55e',borderRadius:4},
+        {label:'车辆数',data:[45,13,45],backgroundColor:'#f59e0b',borderRadius:4}
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'bottom'}},
+      scales:{x:{grid:{display:false}},y:{title:{display:true,text:'人/辆'},grid:{color:'#f0f0f0'}}}
+    }
+  });
+}
+
+let staffChartsInit = false;
+function initStaffCharts(){
+  if(staffChartsInit) return;
+  staffChartsInit = true;
+
+  new Chart(document.getElementById('chart-staff-east'),{
+    type:'doughnut',
+    data:{
+      labels:['作业人员','管理人员'],
+      datasets:[{data:[81,7],backgroundColor:['#4f6ef7','#f59e0b'],borderWidth:2,borderColor:'#fff'}]
+    },
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}}
+  });
+
+  new Chart(document.getElementById('chart-staff-west'),{
+    type:'doughnut',
+    data:{
+      labels:['作业人员','管理人员'],
+      datasets:[{data:[91,8],backgroundColor:['#7c3aed','#22c55e'],borderWidth:2,borderColor:'#fff'}]
+    },
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}}
+  });
+}
+
+// Close modal on overlay click
+document.querySelectorAll('.modal-overlay').forEach(o=>{
+  o.addEventListener('click',e=>{if(e.target===o) o.classList.remove('active')});
+});
+</script>
+</body>
+</html>

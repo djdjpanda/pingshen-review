@@ -1,0 +1,25 @@
+# 评审中心 —— Netlify 缓存与安全响应头
+# 规则按出现顺序生效，同名头后者覆盖前者。
+
+# 默认：所有资源需重新验证。Netlify 自动附带 ETag/Last-Modified，
+# 内容未变更时返回 304（不重复传输 HTML 正文），保证更新即时可见。
+/*
+  Cache-Control: public, max-age=0, must-revalidate
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+
+# 跨全部 10 个页面的图表库与数值标注脚本：长缓存 7 天。
+# 二者内容稳定、体积大（chart.min.js ~200KB），是跨页导航的主要复用资产。
+# 铜陵页面为独立单文件移植版，使用 /tongling/ 下的同名副本，同样长缓存。
+/chart.min.js
+  Cache-Control: public, max-age=604800
+/chart-labels.js
+  Cache-Control: public, max-age=604800
+/tongling/chart.min.js
+  Cache-Control: public, max-age=604800
+/tongling/chart-labels.js
+  Cache-Control: public, max-age=604800
+
+# 各项目评审资料下载文件（PDF/Excel/Word 等）：缓存 1 天，重复下载受益。
+/*/files/*
+  Cache-Control: public, max-age=86400

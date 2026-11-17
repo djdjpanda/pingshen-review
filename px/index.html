@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>蒲县农村生活垃圾治理项目（应急服务）· 投资评审系统</title>
+<script src="../chart.min.js"></script>
+<script src="../chart-labels.js"></script>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --primary:#7c3aed;--primary-dark:#6d28d9;--accent:#4f6ef7;--bg:#f4f3f9;--card:#fff;
+  --text:#1e293b;--text-secondary:#64748b;--border:#e5e7eb;--danger:#dc2626;--warn:#d97706;--ok:#059669;
+  --sidebar-w:240px;--header-h:60px;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text)}
+.app-layout{display:none;min-height:100vh}
+.app-layout.active{display:flex}
+/* ===== Sidebar ===== */
+.sidebar{width:var(--sidebar-w);background:#1c1730;color:#fff;position:fixed;top:0;left:0;bottom:0;z-index:100;transition:transform .3s;display:flex;flex-direction:column}
+.sidebar-header{padding:16px 20px;border-bottom:1px solid rgba(255,255,255,.1);display:flex;align-items:center;gap:12px}
+.sidebar-header .logo-icon{font-size:1.6rem}
+.sidebar-header h2{font-size:.95rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sidebar-nav{flex:1;padding:12px 0;overflow-y:auto}
+.sidebar-nav .nav-item{display:flex;align-items:center;gap:12px;padding:11px 20px;color:rgba(255,255,255,.7);cursor:pointer;transition:all .2s;font-size:.92rem;border-left:3px solid transparent}
+.sidebar-nav .nav-item:hover{background:rgba(255,255,255,.06);color:#fff}
+.sidebar-nav .nav-item.active{background:rgba(124,58,237,.32);color:#fff;border-left-color:var(--primary)}
+.sidebar-nav .nav-item .nav-icon{font-size:1.15rem;width:22px;text-align:center}
+.sidebar-nav .nav-section{padding:8px 20px 4px;font-size:.72rem;text-transform:uppercase;color:rgba(255,255,255,.35);letter-spacing:.5px}
+.sidebar-nav .nav-group{margin:1px 0}
+.sidebar-nav .nav-group-header{display:flex;align-items:center;gap:12px;padding:11px 20px;color:rgba(255,255,255,.7);cursor:pointer;transition:all .2s;font-size:.92rem;border-left:3px solid transparent;user-select:none}
+.sidebar-nav .nav-group-header:hover{background:rgba(255,255,255,.06);color:#fff}
+.sidebar-nav .nav-group-header .nav-icon{font-size:1.15rem;width:22px;text-align:center}
+.sidebar-nav .nav-group-header .chev{margin-left:auto;font-size:.7rem;transition:transform .25s;opacity:.7}
+.sidebar-nav .nav-group.open .nav-group-header{color:#fff}
+.sidebar-nav .nav-group.open .nav-group-header .chev{transform:rotate(90deg)}
+.sidebar-nav .nav-group.has-active .nav-group-header{color:#fff;border-left-color:var(--primary)}
+.sidebar-nav .nav-sub{max-height:0;overflow:hidden;transition:max-height .28s ease}
+.sidebar-nav .nav-group.open .nav-sub{max-height:420px}
+.sidebar-nav .nav-sub .nav-item{padding-left:54px;font-size:.88rem}
+.sidebar-footer{padding:14px 20px;border-top:1px solid rgba(255,255,255,.1)}
+.sidebar-footer .tag{font-size:.72rem;color:rgba(255,255,255,.55);text-align:center}
+/* ===== Main ===== */
+.main-content{margin-left:var(--sidebar-w);flex:1;min-width:0;min-height:100vh;display:flex;flex-direction:column}
+.topbar{height:var(--header-h);background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px;padding:0 24px;position:sticky;top:0;z-index:50}
+.topbar .menu-btn{display:none;font-size:1.4rem;cursor:pointer;background:none;border:none;color:var(--text)}
+.topbar h1{font-size:1.15rem;font-weight:700}
+.topbar .status-pill{margin-left:auto;font-size:.78rem;font-weight:600;padding:5px 14px;border-radius:16px;background:#fef3c7;color:#b45309;border:1px solid #fde68a}
+.content{padding:24px;flex:1}
+.page{display:none;animation:fade .3s}
+.page.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+/* ===== Cards / KPI ===== */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:22px}
+.kpi{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px 20px;box-shadow:0 4px 14px rgba(15,23,42,.05)}
+.kpi .label{font-size:.8rem;color:var(--text-secondary)}
+.kpi .value{font-size:1.6rem;font-weight:800;margin-top:6px}
+.kpi .unit{font-size:.85rem;color:var(--text-secondary);font-weight:600;margin-left:3px}
+.kpi .note{font-size:.72rem;margin-top:5px;color:var(--text-secondary)}
+.kpi.warn .value{color:var(--warn)}
+.kpi.danger .value{color:var(--danger)}
+.kpi.ok .value{color:var(--ok)}
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;box-shadow:0 4px 14px rgba(15,23,42,.05);margin-bottom:20px;overflow:hidden}
+.card-header{padding:15px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.card-header h3{font-size:1rem;font-weight:700}
+.card-header .badge{font-size:.72rem;padding:3px 10px;border-radius:12px;background:#f5f3ff;color:var(--primary-dark);border:1px solid #ddd6fe;margin-left:auto}
+.card-body{padding:20px}
+.chart-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px;margin-bottom:20px}
+.chart-box{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;box-shadow:0 4px 14px rgba(15,23,42,.05)}
+.chart-box h4{font-size:.92rem;margin-bottom:14px;color:var(--text)}
+.chart-box .cv{position:relative;height:240px}
+/* ===== Tables ===== */
+table{width:100%;border-collapse:collapse;font-size:.86rem}
+th,td{padding:10px 12px;text-align:center;border-bottom:1px solid var(--border)}
+th{background:#faf9ff;color:var(--text-secondary);font-weight:600;font-size:.8rem}
+td.l,th.l{text-align:left}
+tr.subtotal{background:#f1f5f9;font-weight:700}
+tr.total{background:#f5f3ff;font-weight:800}
+.tag-diff{display:inline-block;min-width:34px;padding:2px 8px;border-radius:10px;font-size:.78rem;font-weight:700}
+.tag-diff.neg{background:#fee2e2;color:#b91c1c}
+.tag-diff.pos{background:#dcfce7;color:#15803d}
+.tag-diff.zero{background:#f1f5f9;color:#94a3b8}
+/* ===== Info list ===== */
+.info-list{display:flex;flex-direction:column;gap:0}
+.info-item{padding:14px 0;border-bottom:1px dashed var(--border);display:grid;grid-template-columns:130px 1fr;gap:16px}
+.info-item:last-child{border-bottom:none}
+.info-item .k{font-weight:700;color:var(--primary-dark);font-size:.9rem}
+.info-item .v{color:var(--text);line-height:1.75;font-size:.9rem}
+.info-item .v p{margin:4px 0}
+/* ===== Risk ===== */
+.risk-item{border:1px solid var(--border);border-left-width:4px;border-radius:12px;padding:16px 18px;margin-bottom:14px;background:#fff}
+.risk-item.mid{border-left-color:var(--warn)}
+.risk-item.low{border-left-color:#94a3b8}
+.risk-item.high{border-left-color:var(--danger)}
+.risk-head{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.risk-level{font-size:.72rem;font-weight:700;padding:3px 10px;border-radius:10px}
+.risk-level.mid{background:#fef3c7;color:#b45309}
+.risk-level.low{background:#f1f5f9;color:#64748b}
+.risk-level.high{background:#fee2e2;color:#b91c1c}
+.risk-title{font-weight:700;font-size:.95rem}
+.risk-desc{font-size:.86rem;color:var(--text-secondary);line-height:1.75}
+/* ===== Conclusion ===== */
+.concl-box{background:linear-gradient(135deg,#f5f3ff,#ede9fe);border:1px solid #ddd6fe;border-radius:14px;padding:22px;margin-bottom:20px}
+.concl-box .big{font-size:1.05rem;font-weight:700;color:var(--primary-dark);line-height:1.7}
+.steps{counter-reset:s;margin-top:6px}
+.step{position:relative;padding:12px 14px 12px 48px;border-bottom:1px dashed var(--border);font-size:.9rem;line-height:1.6}
+.step:last-child{border-bottom:none}
+.step::before{counter-increment:s;content:counter(s);position:absolute;left:12px;top:12px;width:26px;height:26px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:.82rem;font-weight:700}
+/* ===== Doc viewer ===== */
+.doc-toolbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:#fff;border:1px solid var(--border);border-radius:12px;padding:12px 16px;margin-bottom:16px}
+.doc-toolbar .dt-name{font-weight:700;font-size:.95rem}
+.doc-toolbar .dt-nav{display:flex;align-items:center;gap:8px;margin-left:auto}
+.doc-btn{border:1px solid var(--border);background:#f8fafc;color:var(--text);border-radius:8px;padding:7px 14px;font-size:.85rem;cursor:pointer;font-family:inherit;transition:all .2s}
+.doc-btn:hover:not(:disabled){background:var(--primary);color:#fff;border-color:var(--primary)}
+.doc-btn:disabled{opacity:.4;cursor:not-allowed}
+.doc-page-ind{font-size:.85rem;font-weight:600;min-width:70px;text-align:center}
+.doc-dl{font-size:.82rem;color:#fff;background:var(--primary);border:1px solid var(--primary);padding:7px 14px;border-radius:8px;font-weight:600;text-decoration:none}
+.pdf-single{background:#475569;border-radius:12px;padding:18px;display:flex;justify-content:center;align-items:flex-start;overflow:auto;max-height:78vh}
+.pdf-single img{flex:none;max-width:100%;height:auto;border-radius:6px;box-shadow:0 8px 30px rgba(0,0,0,.35);background:#fff}
+.doc-meta{font-size:.82rem;color:var(--text-secondary);margin-bottom:14px;line-height:1.6}
+@media(max-width:900px){
+  .sidebar{transform:translateX(-100%)}
+  .sidebar.open{transform:translateX(0)}
+  .sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:99}
+  .sidebar-overlay.open{display:block}
+  .main-content{margin-left:0}
+  .topbar .menu-btn{display:block}
+  .info-item{grid-template-columns:1fr;gap:4px}
+}
+
+/* ===== 评审资料（参照京良路文档布局） ===== */
+.doc-toolbar .dt-actions{display:flex;align-items:center;gap:8px;margin-left:auto;flex-wrap:wrap}
+.doc-btn{text-decoration:none}
+.doc-section{background:#fff;border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:18px;box-shadow:0 4px 14px rgba(15,23,42,.04)}
+.doc-section h3{font-size:1rem;color:var(--primary-dark);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+.doc-section h4{font-size:.92rem;margin:14px 0 8px;color:var(--text)}
+.doc-section table{min-width:640px}
+.doc-section p{font-size:.88rem;line-height:1.85;color:var(--text-secondary);margin:8px 0}
+.doc-section ul{margin:6px 0 6px 20px;font-size:.88rem;line-height:1.85;color:var(--text-secondary)}
+.doc-note{background:#f8fafc;border-left:3px solid var(--primary);padding:10px 14px;border-radius:0 8px 8px 0;font-size:.84rem;line-height:1.7;color:var(--text-secondary);margin:10px 0}
+.doc-note.warn{background:#fffbeb;border-left-color:var(--warn)}
+.reply-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+.reply{border:1px solid var(--border);border-radius:10px;padding:12px 14px;font-size:.84rem;line-height:1.75;color:var(--text-secondary);background:#fff}
+.reply b{display:block;color:var(--text);margin-bottom:4px;font-size:.82rem}
+.reply.invest{border-left:3px solid #3b82f6;background:#f8fbff}
+.reply.op{border-left:3px solid #f59e0b;background:#fffdf5}
+@media(max-width:900px){.reply-grid{grid-template-columns:1fr}}
+@media print{.sidebar,.sidebar-overlay,.topbar,.doc-toolbar{display:none!important}.main-content{margin:0!important}.content{padding:0!important}.doc-section{box-shadow:none;break-inside:avoid}}
+</style>
+</head>
+<body>
+<div class="app-layout active" id="appLayout">
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header"><span class="logo-icon">&#127757;</span><h2>蒲县农垃治理·应急服务</h2></div>
+    <nav class="sidebar-nav">
+      <div class="nav-section">主菜单</div>
+      <div class="nav-item active" onclick="navigateTo('dashboard',this)"><span class="nav-icon">&#128202;</span> 数据看板</div>
+      <div class="nav-item" onclick="navigateTo('finance',this)"><span class="nav-icon">&#128176;</span> 财务分析</div>
+      <div class="nav-item" onclick="navigateTo('staff',this)"><span class="nav-icon">&#128101;</span> 人车配置</div>
+      <div class="nav-item" onclick="navigateTo('risks',this)"><span class="nav-icon">&#9888;&#65039;</span> 风险预警</div>
+      <div class="nav-item" onclick="navigateTo('conclusion',this)"><span class="nav-icon">&#9989;</span> 评审结论</div>
+      <div class="nav-group" id="grpReview">
+        <div class="nav-group-header" onclick="toggleGroup(this)"><span class="nav-icon">&#128194;</span> 评审信息 <span class="chev">&#9656;</span></div>
+        <div class="nav-sub">
+          <div class="nav-item" onclick="navigateTo('background',this)"><span class="nav-icon">&#128214;</span> 背景信息</div>
+          <div class="nav-item" onclick="navigateTo('base',this)"><span class="nav-icon">&#9881;&#65039;</span> 基础信息</div>
+          <div class="nav-item" onclick="navigateTo('invest',this)"><span class="nav-icon">&#128188;</span> 投资信息</div>
+          <div class="nav-item" onclick="navigateTo('ops',this)"><span class="nav-icon">&#128736;&#65039;</span> 运营信息</div>
+        </div>
+      </div>
+      <div class="nav-group" id="grpMeeting">
+        <div class="nav-group-header" onclick="toggleGroup(this)"><span class="nav-icon">&#128203;</span> 评审资料 <span class="chev">&#9656;</span></div>
+        <div class="nav-sub">
+          <div class="nav-item" onclick="navigateTo('doc1',this)"><span class="nav-icon">&#128209;</span> 运营评审意见</div>
+        </div>
+      </div>
+    </nav>
+    <div class="sidebar-footer"><div class="tag">北控城市环境服务集团 · 内部评审</div></div>
+  </aside>
+
+  <div class="main-content">
+    <div class="topbar">
+      <button class="menu-btn" onclick="toggleSidebar()">&#9776;</button>
+      <h1 id="pageTitle">数据看板</h1>
+      <span class="status-pill">已中标 · 应急过渡期 6 个月</span>
+    </div>
+    <div class="content">
+      <div class="page active" id="page-dashboard"></div>
+      <div class="page" id="page-finance"></div>
+      <div class="page" id="page-staff"></div>
+      <div class="page" id="page-risks"></div>
+      <div class="page" id="page-conclusion"></div>
+      <div class="page" id="page-background"></div>
+      <div class="page" id="page-base"></div>
+      <div class="page" id="page-invest"></div>
+      <div class="page" id="page-ops"></div>
+      <div class="page" id="page-doc1"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============ 数据（源自 投资决策会PPT + 背景/基础/投资/运营信息 + 运营评审意见） ============ */
+const FIN = {
+  revTax:1646.16, revNoTax:1552.98, avgProfit:210.86, avgMargin:13.58,
+  irr:101.33, svcYear:1646.16, svcMonth:137.18, invest:189.41, investRatio:11.51,
+  devInvest:0, prepFee:22.22, working:167.19,
+  // 不接收填埋场情景
+  noLandfillProfit:146, noLandfillMargin:12.46, landfillRevCut:400,
+  // 敏感性（运营评审意见）
+  sensRevDown10:7.96, sensWorstPay:5.97, breakEvenPay:80, worstPayRate:87.4
+};
+const INVEST_BREAK = [
+  {k:'流动资金', v:167.19},
+  {k:'前期开办', v:22.22},
+  {k:'新购及收购车辆设备', v:0.00}
+];
+// 原 PPP 项目历史回款（万元）
+const PAYHIST = [{k:'2022',v:2665},{k:'2023',v:2761},{k:'2024',v:2950}];
+// 人员配置：岗位, 原始合同, 测算, 差值
+const STAFF = [
+  ['保洁员',226,290,64],
+  ['保洁班长',0,10,10],
+  ['司机',0,21,21],
+  ['转运站',20,5,-15],
+  ['填埋场',36,10,-26],
+  ['合计',282,336,54]
+];
+// 车辆配置：车型, 原始合同, 测算, 差值
+const VEH = [
+  ['8吨洒水车',0,2,2],
+  ['汽油两驱皮卡',0,3,3],
+  ['勾臂车',10,0,-10],
+  ['3吨侧挂桶车',30,15,-15],
+  ['3吨压缩车',10,10,0],
+  ['12吨转运车',0,4,4],
+  ['吸污车',1,2,1],
+  ['压实机',0,2,2],
+  ['装载机',0,2,2],
+  ['挖掘机',0,2,2],
+  ['自卸车',0,2,2],
+  ['合计',51,44,-7]
+];
+const RISKS = [
+  {lv:'high',t:'填埋场运维安全环保风险',d:'填埋场处置设备长期不运转、渗滤液等污染源长期得不到有效处理；即使封场后渗沥液仍需 24 小时不间断监测处理，填埋气（甲烷、硫化氢）可持续产生十年以上，积聚达标遇明火即可能爆炸，雨季雨水导排不当易致堆体失稳溃坝。安环风险高、启用后运维费用不可控。建议不接收，或接收前委托专业机构系统评估工程质量、环保状况、设备运转及真实运营成本后再决策。'},
+  {lv:'mid',t:'PPP 协议解除不确定的派生风险',d:'政府单方发函要求原运营方（山西蒲亿惠）退场，但依据原 PPP 合同约定，解除须经双方协商一致方生效。现阶段合同能否有效解除、移交义务是否即时触发仍存不确定；若协商不成，我方入场移交可能因原运营方不配合而受阻。'},
+  {lv:'mid',t:'承接欠薪风险',d:'原运营方拖欠 3—8 月保洁员工资，接收人员后存在人员向我方主张补发工资或将公司列为共同被告的可能；合同虽约定由甲方负责终止原劳动关系且公司不担费用，但该约定不能直接对抗劳动者。'},
+  {lv:'mid',t:'利润高度依赖四项假设',d:'平均净利率 13.58% 同时依赖"免费使用存量车辆、290 名超龄人员按 1,000 元/月不缴社保、无考核扣款、8 年不调价"四项假设，任一不成立，净利率即跌破 8% 或直接转亏。'},
+  {lv:'mid',t:'人车配置不确定性',d:'测算作业人员 336 人较合同定员 282 人多配 54 人、比政府发薪 326 人多配；测算配置 44 辆车与合同 51 辆车型车数不符（相差 7 辆）。因缺花名册、人员及车辆台账等原始资料，无法逐一核实是否匹配实际需求，应尽快现场核实、逐批配置。'},
+  {lv:'mid',t:'真实垃圾量待确认',d:'测算作业量 21,900 吨/年（日清运 60 吨）与原始资料 115.07 吨/日（42,000 吨/年）相差较大。真实垃圾量决定道路清扫之外的清运、转运站、填埋场资源配置及大部分作业成本，因无历史数据亟需确认真实垃圾量与垃圾物流情况。'},
+  {lv:'mid',t:'超龄用工与工资合规风险',d:'两版测算超龄人员 290 人、占比 86.31%；保洁员 1,000 元/月、班长 1,800 元/月、计量/门卫 2,000 元/月均低于当地最低工资标准 2,250 元，存在劳动合规、社保补缴及队伍稳定风险。'},
+  {lv:'mid',t:'车辆"零投资零折旧"逻辑不闭合',d:'测算 44 辆车未计租金或折旧，收益建立在"免费使用现有车辆"这一尚未落定的前提上——有运行成本、无资产成本，表内逻辑不闭合；8 年期必涉及车辆更新并产生折旧。'},
+  {lv:'mid',t:'回款与垫资风险',d:'收入按 100% 回款、0 扣款测算。按收入下降 10% 测算 8 年期净利降至 7.96%（跌破 8%），按最差回款率 87.4% 测算净利 5.97%（接近低效线 6%），盈亏平衡回款率约 80%；虽约定按月支付，仍需核查按时回款能力、规避欠款与垫付风险。'},
+  {lv:'low',t:'考核扣罚机制未约定',d:'应急协议仅援引原 PPP 合同附件 2 明确考核标准，未约定扣罚机制与扣款上限，结算规则不明确，建议补充扣款比例上限及申诉复核机制。'},
+  {lv:'low',t:'除雪及应急成本',d:'测算按 4 场雪计算，而近 5 年蒲县共降雪 40 场、年均 5 场（含 1 场暴雪）。建议补齐除雪各单项成本，并在合同中增加暴雪及连续大雪应急单独结算、补偿条款，避免成本超支。'}
+];
+const CONCL = {
+  head:'本项目服务内容中，因填埋场运营存在较高环保风险，建议不接收，或在委托专业机构系统评估后决策能否接收；其他服务内容运营风险可控，建议按决策意见及法务针对应急服务协议条款的意见和建议落实后，投资运营。',
+  items:[
+    '要求政府提供本次委托的立项依据、预算安排及拟履行的采购程序说明等合规性支撑文件，协议明确政府资金来源已纳入财政预算、有能力按时支付服务费；',
+    '明确在任运营方不退出时的处置机制，约定我方暂缓入场免责条款——因在任运营方不配合、移交不完整或拖延致未达进场条件的，乙方有权暂缓入场且不视为违约；',
+    '核实人员工资发放情况，欠薪未结清人员由甲方负责处理，明确欠薪人员接收机制并增加我方承担补缴后向甲方追偿的条款；',
+    '补充完善考核方案，明确扣罚机制及扣款上限；',
+    '明确车辆由政府免费提供，我方仅承担作业中使用车辆的成本（保险、维修等）；',
+    '若接收填埋场运营，需委托专业机构评估填埋场安全风险，系统考察工程质量、环保状况、设备运转及未来设备更新维护、真实运营成本与环保隐患。'
+  ]
+};
+
+/* ============ 渲染 ============ */
+const $=id=>document.getElementById(id);
+function money(n){return n.toLocaleString('zh-CN',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function diffTag(v){const n=Number(v);const cls=n<0?'neg':(n>0?'pos':'zero');const s=n>0?'+'+n:''+n;return '<span class="tag-diff '+cls+'">'+s+'</span>';}
+
+function renderDashboard(){
+  $('page-dashboard').innerHTML = `
+  <div class="kpi-grid">
+    <div class="kpi"><div class="label">年服务费</div><div class="value">${FIN.svcYear}<span class="unit">万元</span></div><div class="note">137.18 万元 / 月 · 按月支付</div></div>
+    <div class="kpi ok"><div class="label">平均净利润率</div><div class="value">${FIN.avgMargin}<span class="unit">%</span></div><div class="note">高于集团 8% 及低效线 6%</div></div>
+    <div class="kpi"><div class="label">平均净利润</div><div class="value">${FIN.avgProfit}<span class="unit">万元/年</span></div><div class="note">不接收填埋场约 ${FIN.noLandfillProfit} 万 / ${FIN.noLandfillMargin}%</div></div>
+    <div class="kpi ok"><div class="label">内部收益率（税后）</div><div class="value">${FIN.irr}<span class="unit">%</span></div><div class="note">过渡期 1 年口径</div></div>
+    <div class="kpi"><div class="label">初期总投资</div><div class="value">${FIN.invest}<span class="unit">万元</span></div><div class="note">投资占比 ${FIN.investRatio}% · 无设备投资</div></div>
+    <div class="kpi warn"><div class="label">一线作业人员</div><div class="value">336<span class="unit">人</span></div><div class="note">合同定员 282 · 多配 54</div></div>
+  </div>
+  <div class="chart-row">
+    <div class="chart-box"><h4>净利润率情景对比（%）</h4><div class="cv"><canvas id="chMargin"></canvas></div></div>
+    <div class="chart-box"><h4>初期总投资构成（万元）</h4><div class="cv"><canvas id="chInvest"></canvas></div></div>
+  </div>
+  <div class="chart-row">
+    <div class="chart-box"><h4>年净利润情景对比（万元）</h4><div class="cv"><canvas id="chProfit"></canvas></div></div>
+    <div class="chart-box"><h4>原 PPP 项目历史回款（万元）</h4><div class="cv"><canvas id="chPay"></canvas></div></div>
+  </div>
+  <div class="card"><div class="card-header"><h3>项目关键指标</h3><span class="badge">运营评审意见 · 投资决策会</span></div><div class="card-body">
+    <table><tbody>
+      <tr><td class="l">业务收入（含税）</td><td><b>${money(FIN.revTax)}</b> 万元/年</td><td class="l">业务收入（不含税）</td><td><b>${money(FIN.revNoTax)}</b> 万元/年</td></tr>
+      <tr><td class="l">平均净利润</td><td><b>${money(FIN.avgProfit)}</b> 万元/年</td><td class="l">平均净利润率</td><td><b>${FIN.avgMargin}%</b></td></tr>
+      <tr><td class="l">内部收益率（税后）</td><td><b>${FIN.irr}%</b></td><td class="l">初期总投资</td><td><b>${money(FIN.invest)}</b> 万元（占比 ${FIN.investRatio}%）</td></tr>
+      <tr><td class="l">一线作业人员 / 管理人员</td><td><b>336 / 5</b> 人</td><td class="l">配置车辆</td><td><b>44</b> 辆（免费使用现有车辆）</td></tr>
+    </tbody></table>
+  </div></div>`;
+}
+function renderFinance(){
+  $('page-finance').innerHTML = `
+  <div class="card"><div class="card-header"><h3>成本及利润</h3><span class="badge">过渡期 1 年平均口径</span></div><div class="card-body">
+    <table><thead><tr><th class="l">内容</th><th>金额</th><th class="l">说明</th></tr></thead><tbody>
+      <tr><td class="l">业务收入（含税）</td><td>${money(FIN.revTax)} 万元</td><td class="l">年服务费（137.18 万元/月）</td></tr>
+      <tr><td class="l">业务收入（不含税）</td><td>${money(FIN.revNoTax)} 万元</td><td class="l">测算收入基数</td></tr>
+      <tr><td class="l">平均净利润</td><td>${money(FIN.avgProfit)} 万元</td><td class="l">万元 / 年</td></tr>
+      <tr class="subtotal"><td class="l">平均净利润率</td><td>${FIN.avgMargin}%</td><td class="l">高于集团 8% 及低效项目最低 6%</td></tr>
+      <tr><td class="l">内部收益率（税后）</td><td>${FIN.irr}%</td><td class="l">全投资口径</td></tr>
+      <tr><td class="l">不接收填埋场情景</td><td>${FIN.noLandfillProfit} 万元 / ${FIN.noLandfillMargin}%</td><td class="l">扣减填埋场收入（暂估 400 万元）及对应成本后估测</td></tr>
+    </tbody></table>
+    <div class="doc-meta" style="margin-top:12px">现签应急协议 6 个月；待原 PPP 项目终止后正式进入招采阶段、履行招投标程序，服务期预计为 8 年。回款正常情形下可实现正向现金流。</div>
+  </div></div>
+  <div class="chart-row">
+    <div class="chart-box"><h4>投资构成（万元）</h4><div class="cv"><canvas id="chInvest2"></canvas></div></div>
+    <div class="chart-box"><h4>回款/收入敏感性（净利率 %）</h4><div class="cv"><canvas id="chSens"></canvas></div></div>
+  </div>
+  <div class="card"><div class="card-header"><h3>投资与费用</h3></div><div class="card-body">
+    <table><thead><tr><th class="l">类别</th><th>金额（万元）</th><th class="l">备注</th></tr></thead><tbody>
+      ${INVEST_BREAK.map(x=>`<tr><td class="l">${x.k}</td><td>${money(x.v)}</td><td class="l">${x.k==='新购及收购车辆设备'?'车辆由政府免费提供，无设备投资':'—'}</td></tr>`).join('')}
+      <tr class="total"><td class="l">初期总投资</td><td>${money(FIN.invest)}</td><td class="l">投资占比约 ${FIN.investRatio}%（未超集团 3 年及以下项目 ≤30% 标准）</td></tr>
+    </tbody></table>
+  </div></div>
+  <div class="card"><div class="card-header"><h3>收益敏感性分析</h3><span class="badge">运营评审意见</span></div><div class="card-body">
+    <table><thead><tr><th class="l">情景</th><th>净利率</th><th class="l">结论</th></tr></thead><tbody>
+      <tr><td class="l">全接收（含填埋场）</td><td>13.58%</td><td class="l">达标</td></tr>
+      <tr><td class="l">不接收填埋场</td><td>12.46%</td><td class="l">达标</td></tr>
+      <tr><td class="l">收入下降 10%（考核扣款/降价）</td><td>7.96%</td><td class="l">跌破集团 8% 要求</td></tr>
+      <tr><td class="l">最差年度回款率 87.4%</td><td>5.97%</td><td class="l">接近低效项目 6% 下限</td></tr>
+      <tr class="subtotal"><td class="l">盈亏平衡回款率</td><td>约 80%</td><td class="l">考核扣款与付款延迟叠加时垫资规模扩大</td></tr>
+    </tbody></table>
+  </div></div>`;
+}
+function cfgTable(arr,nameCol){
+  return `<table><thead><tr><th class="l">${nameCol}</th><th>原始合同</th><th>测算</th><th>差值</th></tr></thead><tbody>${arr.map(r=>{const isT=r[0]==='合计';return `<tr class="${isT?'total':''}"><td class="l">${r[0]}</td><td>${r[1]}</td><td><b>${r[2]}</b></td><td>${diffTag(r[3])}</td></tr>`;}).join('')}</tbody></table>`;
+}
+function renderStaff(){
+  $('page-staff').innerHTML = `
+  <div class="card"><div class="card-header"><h3>1. 人员配置</h3><span class="badge">测算 336 人 · 合同定员 282 · 多配 54</span></div><div class="card-body">
+    <div class="doc-meta">原始合同约定劳动定员 <b>282 人</b>（转运站 20、保洁 226、填埋场 36），政府按 <b>326 人</b>发放工资；现两版测算作业人员 <b>336 人</b>（另有管理人员 5 人），较合同要求多配 <b>54 人</b>、比政府发薪人数多配。因缺花名册、人员台账等原始资料，无法逐一对比差异并确定是否匹配实际需求。</div>
+    ${cfgTable(STAFF,'岗位')}
+  </div></div>
+  <div class="card"><div class="card-header"><h3>2. 车辆配置</h3><span class="badge">测算 44 辆 · 合同 51 辆 · 相差 7</span></div><div class="card-body">
+    <div class="doc-meta">原始合同约定车辆 <b>51 辆</b>（勾臂车 10、3 吨压缩车 10、3 吨挂桶车 30、吸污车 1，设施用工程机械未要求），现测算配置 <b>44 辆</b>，与合同约定车型、车数不符，相差 7 辆。车辆由政府<b>免费提供</b>使用，因缺现有车辆台账，需现场核实有无因配置不符被考核情况。</div>
+    ${cfgTable(VEH,'车型')}
+  </div></div>`;
+}
+function renderRisks(){
+  const cnt={high:0,mid:0,low:0};RISKS.forEach(r=>cnt[r.lv]++);
+  const lbl={high:'高',mid:'中',low:'低'};
+  $('page-risks').innerHTML = `
+  <div class="kpi-grid">
+    <div class="kpi danger"><div class="label">高风险</div><div class="value">${cnt.high}</div></div>
+    <div class="kpi warn"><div class="label">中风险</div><div class="value">${cnt.mid}</div></div>
+    <div class="kpi"><div class="label">低风险</div><div class="value">${cnt.low}</div></div>
+    <div class="kpi"><div class="label">合计关注项</div><div class="value">${RISKS.length}</div></div>
+  </div>
+  ${RISKS.map((r,i)=>`<div class="risk-item ${r.lv}"><div class="risk-head"><span class="risk-level ${r.lv}">${lbl[r.lv]}风险</span><span class="risk-title">${i+1}. ${r.t}</span></div><div class="risk-desc">${r.d}</div></div>`).join('')}`;
+}
+function renderConclusion(){
+  $('page-conclusion').innerHTML = `
+  <div class="concl-box"><div class="big">${CONCL.head}</div></div>
+  <div class="card"><div class="card-header"><h3>投前落实事项（过渡协议中明确）</h3><span class="badge">市场拓展中心 + 郭强</span></div><div class="card-body"><div class="steps">
+    ${CONCL.items.map(t=>`<div class="step">${t}</div>`).join('')}
+  </div></div></div>
+  <div class="card"><div class="card-header"><h3>后续执行要求</h3></div><div class="card-body">
+    <div class="info-list">
+      <div class="info-item"><div class="k">投前</div><div class="v"><p>本项目为应急过渡期服务，需在过渡协议中明确委托合规性支撑、在任运营方不退出时的免责与处置机制、欠薪人员处理与追偿、考核扣罚机制、车辆免费提供及成本边界等条款；若接收填埋场，须先委托专业机构评估安环风险与真实运营成本。</p><p>执行主体：市场拓展中心 + 郭强。</p></div></div>
+      <div class="info-item"><div class="k">投后</div><div class="v"><p>本项目属过渡期服务，为在后续正式招标中获取本项目并实现较好收益，运营同时需全面调研运营环境及作业风险，制定优化作业方案，尽快现场核实人车配置合格率、作业计划合理性，规避考核扣款与退场风险，实现项目持续运营。</p><p>执行主体：项目公司 + 肖东。</p></div></div>
+      <div class="info-item"><div class="k">其他</div><div class="v">其他合同内容按法务针对应急服务协议条款的专业评审意见落实。</div></div>
+    </div>
+  </div></div>`;
+}
+function infoCard(title, items, badge){
+  return `<div class="card"><div class="card-header"><h3>${title}</h3>${badge?`<span class="badge">${badge}</span>`:''}</div><div class="card-body"><div class="info-list">
+    ${items.map(it=>`<div class="info-item"><div class="k">${it[0]}</div><div class="v">${it[1]}</div></div>`).join('')}
+  </div></div></div>`;
+}
+function renderBackground(){
+  $('page-background').innerHTML = infoCard('背景信息',[
+    ['采购方式','委托运营（政府购买服务）。'],
+    ['采购主体','蒲县园林环卫中心。'],
+    ['当地财政','蒲县，山西省临汾市辖县，位于山西省西南部、临汾市南端，总面积 1,510.61 平方千米，辖 5 个镇、3 个乡。2022—2025 年一般公共预算收入：20.71 亿元（+60.2%）、20.06 亿元（−3.1%）、18.96 亿元（−5.5%）、13.20 亿元（−30.4%），近年持续下滑。'],
+    ['项目性质','本项目为新增应急服务项目——承接原 PPP 项目终止后的过渡期垃圾治理作业。']
+  ],'投资决策会 · 背景信息') + `
+  <div class="card"><div class="card-header"><h3>原 PPP 项目合同解除及商请应急说明</h3></div><div class="card-body">
+    <div class="doc-meta">2026 年 10 月 14 日，蒲县园林环卫中心向原项目公司<b>山西蒲亿惠环境治理有限公司</b>发送《关于终止蒲县农村生活垃圾治理工程 PPP 项目合同的函》；2026 年 10 月 16 日发函商请我司开展本项目应急处理工作。主要违约事实如下：</div>
+    <div class="steps">
+      <div class="step">未按合同约定足额落实运维流动资金 382.18 万元；未按合同约定提交运营维护保函金额 300 万元。</div>
+      <div class="step">2026 年 5 月 20 日项目运营停摆，造成克城镇、太林乡等乡镇生活垃圾清运不及时；8 月 9 日再次停摆，黑龙关镇垃圾积压引发舆情；10 月 14 日全县农村生活垃圾收运工作全面中断，收转运系统瘫痪。</div>
+      <div class="step">2026 年 9 月 18 日，省纪委督导组专项督导发现项目农村保洁员工资（3 月—8 月）未及时发放，严重侵害保洁人员合法权益、影响一线队伍稳定。</div>
+    </div>
+    <div class="doc-meta" style="margin-top:12px">依据项目合同相关约定，政府主管部门通知"蒲县农村生活垃圾治理工程 PPP 项目合同"终止。原 PPP 项目自 2021 年 8 月投入运营。</div>
+  </div></div>`;
+}
+function renderBase(){
+  $('page-base').innerHTML = infoCard('基础信息',[
+    ['项目模式','政府购买服务。'],
+    ['服务期限','现签应急协议 6 个月。待原 PPP 项目终止后正式进入招采阶段、履行招投标程序，服务期预计为 8 年。'],
+    ['服务范围','蒲县 9 个乡镇 93 个行政村，与《蒲县农村生活垃圾治理工程 PPP 项目合同》约定的服务范围一致。'],
+    ['服务内容','服务范围内的生活垃圾（不含建筑垃圾、工业垃圾、医疗垃圾，严禁混入有害、有毒、易燃易爆等危险垃圾）清扫保洁、收集转运、填埋处置、应急保障服务。'],
+    ['服务费','137.18 万元 / 月（年服务费 1,646.16 万元）。'],
+    ['服务费来源','财政资金。'],
+    ['付费方式','按月支付。'],
+    ['考核方式','依据《蒲县农村生活垃圾治理工程 PPP 项目运营维护管理绩效考核表》对环卫作业进行月度考评。'],
+    ['作业规模','常住人口 95,679 人；转运站在用 5 座（合同 10 座）；填埋场 2 座、处理规模 75 吨/日；测算作业量 21,900 吨/年（日清运 60 吨）。']
+  ],'投资决策会 · 基础信息');
+}
+function renderInvest(){
+  $('page-invest').innerHTML = infoCard('投资信息',[
+    ['投资主体','北控城市环境服务集团有限公司。'],
+    ['资金来源','自有资金。'],
+    ['项目总投资','测算初期总投资 189.41 万元，其中流动资金 167.19 万元、前期开办（初期投资）22.22 万元；<b>无车辆设备投资</b>（车辆由政府免费提供），投资占比约 11.51%，未超集团 3 年及 3 年以下项目不高于 30% 的标准。'],
+    ['期末资产处置','过渡期使用政府免费提供的现有车辆，无购置车辆、不涉及调拨与物流成本。']
+  ],'投资决策会 · 投资信息') + `
+  <div class="chart-row"><div class="chart-box"><h4>投资构成（万元）</h4><div class="cv"><canvas id="chInvest3"></canvas></div></div></div>`;
+}
+function renderOps(){
+  $('page-ops').innerHTML = infoCard('运营信息',[
+    ['拟运营单位','暂由公司直接委派管理人员管理，后续进入招采阶段设立新项目公司。'],
+    ['项目负责人','肖东（中部区域）。'],
+    ['人员配置','一线保洁 336 人，管理人员 5 人。'],
+    ['车辆配置','免费使用项目现有车辆，配置 44 辆。'],
+    ['运营关注','①人车配置与实际匹配需现场核实；②真实垃圾量待确认；③填埋场运维安环风险高，建议不接收或评估后决策；④PPP 协议解除及移交不确定性；⑤承接原运营方欠薪风险。']
+  ],'投资决策会 · 运营信息');
+}
+/* ============ 评审资料 · 运营评审意见 ============ */
+const DOC={name:'蒲县农村生活垃圾治理项目运营评审意见',file:'files/opinion.bin',dl:'蒲县农村生活垃圾治理项目运营评审意见.pdf',meta:'城服运营中心 · 2026-10-22 · 新增项目 · 1 年期过渡 + 8 年期两版测算'};
+function renderDoc(){
+  $('page-doc1').innerHTML = `
+  <div class="doc-toolbar"><span class="dt-name">${DOC.name}</span><div class="dt-actions"><button class="doc-btn" onclick="window.print()">打印 / 导出 PDF</button><a class="doc-dl" href="${DOC.file}" download="${DOC.dl}">下载 PDF 原文</a></div></div>
+  <div class="doc-meta">${DOC.meta} · 以下为评审意见与投资回复、运营答复的逐项整理。</div>
+
+  <div class="doc-section"><h3>一、运营风险汇总</h3>
+    <h4>1. 人车配置不确定性</h4>
+    <p>原始合同约定劳动定员 282 人（转运站 20 人、保洁 226 人、填埋场 36 人），政府按 326 人发放工资；两版测算作业人员 340 人（含管理人员 4 人），较合同多配 54 人、较政府发薪人数多配 16 人。合同约定车辆 51 辆（勾臂车 10 辆、3 吨压缩车 10 辆、3 吨挂桶车 30 辆、吸污车 1 辆），测算配置 44 辆，车型、车数均与合同不符。因缺少花名册、车辆台账等原始资料，无法逐项核实差异，存在考核扣款风险。</p>
+    <h4>2. 真实垃圾量待确认</h4>
+    <p>测算作业量 21,900 吨/年、日清运量 60 吨，与原始资料 115.07 吨/日（42,000 吨/年）差距较大。真实垃圾量决定垃圾清运、转运站运维和填埋场的资源配置及大部分作业成本，需尽快确认真实垃圾量及收运、直运、转运各条线的物流情况。</p>
+  </div>
+
+  <div class="doc-section"><h3>二、利润及投资</h3>
+    <p>两版测算“形式达标、实质脆弱”：净利率 12.27% / 14.67% 高于集团一般要求 8% 和低效项目 6% 标准，投资占比 11.40% / 11.68% 低于 30% 红线，但结论同时依赖四项假设——免费使用存量车辆、290 名超龄人员按 1,000 元/月不缴社保、无考核扣款、8 年不调价。四项假设任一不成立，净利率即跌破 8% 或直接转亏。</p>
+    <div class="table-wrap"><table><thead><tr><th class="l">测算口径</th><th>平均净利率</th><th>最低净利率</th><th>初期总投资</th><th>投资占比</th></tr></thead><tbody>
+      <tr><td class="l">1 年期（过渡期）</td><td>12.27%</td><td>—</td><td>187.59 万元</td><td>11.40%</td></tr>
+      <tr><td class="l">8 年期</td><td>14.67%</td><td>首年 13.78%</td><td>192.30 万元</td><td>11.68%</td></tr>
+      <tr class="total"><td class="l">运营调整后（1 年期）</td><td>13.58%</td><td>—</td><td>189.41 万元</td><td>—</td></tr>
+    </tbody></table></div>
+    <p>1 年期按整年 12 个月编制，而协议首期仅 6 个月（可延至 12 个月），若实际仅 6 个月，收入 823.08 万元，1 年版净利润 190.56 万元不能直接套用；两版费用口径不一致，净利率不可直接比较，存在结算争议风险。</p>
+    <div class="reply-grid">
+      <div class="reply invest"><b>投资回复</b>过渡期暂定 6 个月，有延长可能；测算表按整年逻辑设置，按 1 整年计算较为合理。8 年期版本仅作参考，正式招采阶段重新计算。</div>
+      <div class="reply op"><b>运营答复</b>调整后 1 年期平均净利率 13.58%、内部收益率（税后）101.33%；初期总投资 189.41 万元。</div>
+    </div>
+  </div>
+
+  <div class="doc-section"><h3>三、合作把握性</h3>
+    <p>本项目是否由我方从源头组织、策划？投资回复：是。是否有潜在竞争对手、我方优势及合作把握？投资回复：无竞争对手。</p>
+  </div>
+
+  <div class="doc-section"><h3>四、服务范围及内容</h3>
+    <p>对比原始合同，服务费、单价、服务范围是否有变化？投资回复：无变化。是否对照原始合同的服务范围、内容、作业标准及考核要求进行现场尽调？投资回复：是。</p>
+  </div>
+
+  <div class="doc-section"><h3>五、考核标准</h3>
+    <p>既往有无恶意、不合理扣款或随意拔高考核标准情况？投资回复：无此情况。运营答复：应尽快复核人车配置合格率与作业计划合理性，确保与考核要求、实际需求匹配，规避考核扣款及退场风险。</p>
+  </div>
+
+  <div class="doc-section"><h3>六、人员配置</h3>
+    <h4>1. 最低配置要求</h4>
+    <div class="table-wrap"><table><thead><tr><th class="l">岗位</th><th>原始合同</th><th>测算</th><th>差值</th></tr></thead><tbody>
+      <tr><td class="l">保洁员</td><td>226</td><td>290</td><td>+64</td></tr>
+      <tr><td class="l">保洁班长</td><td>0</td><td>10</td><td>+10</td></tr>
+      <tr><td class="l">司机</td><td>0</td><td>21</td><td>+21</td></tr>
+      <tr><td class="l">转运站</td><td>20</td><td>5</td><td>-15</td></tr>
+      <tr><td class="l">填埋场</td><td>36</td><td>10</td><td>-26</td></tr>
+      <tr class="total"><td class="l">合计</td><td>282</td><td>336</td><td>+54</td></tr>
+    </tbody></table></div>
+    <p>测算合计 336 人，另含管理人员 4 人，合计 340 人。投资回复：现配置人数按近期实际人数配置；运营答复：应尽快复核，视情逐批配置，确保人员与实际需求匹配。</p>
+    <h4>2. 人员接收</h4>
+    <p>2025 年预评审资料显示项目现有人员约 410 人，已超测算配置；政府回复允许减员，现有人员可覆盖考核标准。合同约定超额人员不额外支付补偿；项目到期后现有人员是否由下家全部接收，回复为后期招采阶段可约定。运营要求合同明确再次续签、重新招标或突发退场时由政府或新公司无条件接收所有人员。</p>
+    <h4>3. 超龄人员</h4>
+    <p>两版测算超龄人员 290 人，占比 86.31%。投资回复符合实际情况；运营答复要求明确是否符合集团相应制度要求。</p>
+    <h4>4. 人工成本</h4>
+    <p>290 名保洁员 1,000 元/月（不含社保）、保洁班长 1,800 元/月、计量/门卫 2,000 元/月，均低于当地最低工资 2,250 元。投资回复：按实际发放工资计算，农村地区部分作业人员兼职。作业人工成本表按 336 人测算合计 705.89 万元，直接运行成本表人工成本 662.01 万元，差额 43.88 万元（6.2%），分单元人工与配置表不能逐一对应，分摊口径不明；投资回复称人数链接公式有误，已调整。</p>
+    <p>8 年期内无调价机制、人工成本零增长，人工占直接运行成本 57.2%，为最大风险敞口。若人工年增 3%，8 年平均净利约 172.6 万元（11.1%）、末年约 103 万元（6.6%）；若年增 5%，平均净利约 131.9 万元（8.5%）、末年约 15 万元（1.0%），基本无利可图。投资回复：8 年测算仅作参考，后期招采重新计算。</p>
+  </div>
+
+  <div class="doc-section"><h3>七、车辆设备配置</h3>
+    <h4>1. 最低配置要求</h4>
+    <p>合同车辆 51 辆，测算 44 辆，差 7 辆；勾臂车少 10 辆、3 吨侧挂桶车少 15 辆，新增洒水车、皮卡、转运车及工程机械等。</p>
+    <div class="table-wrap"><table><thead><tr><th class="l">车型</th><th>合同</th><th>测算</th><th>差值</th></tr></thead><tbody>
+      <tr><td class="l">8 吨洒水车</td><td>0</td><td>2</td><td>+2</td></tr>
+      <tr><td class="l">汽油两驱皮卡</td><td>0</td><td>3</td><td>+3</td></tr>
+      <tr><td class="l">勾臂车</td><td>10</td><td>0</td><td>-10</td></tr>
+      <tr><td class="l">3 吨侧挂桶车</td><td>30</td><td>15</td><td>-15</td></tr>
+      <tr><td class="l">3 吨压缩车</td><td>10</td><td>10</td><td>0</td></tr>
+      <tr><td class="l">12 吨转运车</td><td>0</td><td>4</td><td>+4</td></tr>
+      <tr><td class="l">吸污车</td><td>1</td><td>2</td><td>+1</td></tr>
+      <tr><td class="l">工程机械等</td><td>0</td><td>8</td><td>+8</td></tr>
+      <tr class="total"><td class="l">合计</td><td>51</td><td>44</td><td>-7</td></tr>
+    </tbody></table></div>
+    <h4>2. 租金或折旧</h4>
+    <p>车辆设备“零投资、零折旧”，收益建立在“免费使用现有车辆”尚未落定的前提上，有运行成本、无资产成本，表内逻辑不闭合。投资回复：确认车辆设备无偿使用，只计运行成本、不计资产成本；8 年期更新成本仅作参考。</p>
+    <p>车辆接收方面，回复现有资料未明确新购、租赁或接收，无需接收原有车辆，不存在产权、未挂牌、无法过户等情况；项目到期后未计提完折旧车辆是否由下家按残值接收，需在合同中明确。车辆通行条件回复无异常。</p>
+  </div>
+
+  <div class="doc-section"><h3>八、环卫业务</h3>
+    <h4>1. 道路清扫保洁</h4>
+    <p>常住人口 95,679 人，按每 400 人配置 1 名保洁员需 239 人，合同约定 226 人，测算 290 人，需现场核实优化空间。机械作业配置 2 辆洒水车、3 名司机，人车数量逻辑不一致。</p>
+    <h4>2. 垃圾清运</h4>
+    <p>测算 21,900 吨/年、60 吨/日，与原始资料 115.07 吨/日差距较大；车辆配置 31 辆、每日安排 14 辆、闲置 17 辆；压缩车未配辅助工，投资回复已按每车 1 名辅助工调整。垃圾处置费、过路过桥费均回复不发生。</p>
+    <h4>3. 转运站</h4>
+    <p>合同显示转运站 10 座，测算按 5 座计算；投资回复实际在用 5 座，另 5 座使用状态及后续是否运营需明确。</p>
+    <h4>4. 填埋场</h4>
+    <p>生活垃圾收运量 21,900 吨/年（约 60 吨/日），填埋场处理规模 75 吨/日（27,375 吨/年），相差 5,475 吨/年（25%）。2 座填埋场仅配置 2 名计量/门卫，封场后渗沥液、填埋气仍需 24 小时运行和专人管理，存在安全环保风险；配置工程机械及车辆 8 辆、机械操作员 6 人，人车数量不一致。</p>
+    <h4>5. 除雪及应急</h4>
+    <p>测算按 4 场雪（1 场小雪、2 场中雪、1 场大雪），过去 5 年蒲县降雪共 40 场、年均 5 场，投资回复已调整为 5 场。运营建议补齐除雪各单项成本，在合同中增加“暴雪及连续大雪应急结算条款”，明确超标准作业补偿机制。</p>
+  </div>
+
+  <div class="doc-section"><h3>九、回款</h3>
+    <p>收入按全额、100% 回款测算，未计考核扣款。按收入下降 10%（考核扣款或降价）测算，8 年期净利降至 111.3 万元（7.96%），跌破 8%；按最差年度回款率 87.4% 测算，净利降至 81.0 万元（5.97%），接近低效项目 6% 下限；盈亏平衡回款率约 80%。投资回复：按月回款，2022—2024 年回款分别为 2,665 / 2,761 / 2,950 万元，无恶意扣款。运营要求补充近三年逐月考核及扣款明细，并按 95%、90% 两档回款率做敏感性测算。</p>
+  </div>
+
+  <div class="doc-section"><h3>十、退场</h3>
+    <p>已计退场人员补偿 1 年期 3.22 万元、8 年期 19.32 万元；低于正常市场价的折现损失、调拨暂存物流成本等未计。投资回复：车辆免费使用，不需调拨、物流等成本。</p>
+    <div class="doc-note warn">以上为运营评审意见要点整理；完整意见、投资回复及运营答复请下载 PDF 原文核对。</div>
+  </div>`;
+}
+
+/* ============ 导航 ============ */
+var VIEWS=['dashboard','finance','staff','risks','conclusion','background','base','invest','ops','doc1'];
+function navigateTo(page, el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  $('page-'+page).classList.add('active');
+  document.querySelectorAll('.sidebar-nav .nav-item').forEach(n=>n.classList.remove('active'));
+  document.querySelectorAll('.sidebar-nav .nav-group').forEach(g=>g.classList.remove('has-active'));
+  if(el){ el.classList.add('active'); var g=el.closest('.nav-group'); if(g){g.classList.add('open');g.classList.add('has-active');} }
+  $('pageTitle').textContent={dashboard:'数据看板',finance:'财务分析',staff:'人车配置',risks:'风险预警',conclusion:'评审结论',background:'评审信息 · 背景信息',base:'评审信息 · 基础信息',invest:'评审信息 · 投资信息',ops:'评审信息 · 运营信息',doc1:'评审资料 · 运营评审意见'}[page]||page;
+  $('sidebar').classList.remove('open');$('sidebarOverlay').classList.remove('open');
+  if(page==='dashboard') setTimeout(()=>dashCharts(),40);
+  if(page==='finance') setTimeout(()=>finCharts(),40);
+  if(page==='invest') setTimeout(()=>investCharts(),40);
+}
+function toggleGroup(h){h.parentElement.classList.toggle('open');}
+function toggleSidebar(){$('sidebar').classList.toggle('open');$('sidebarOverlay').classList.toggle('open');}
+
+/* ============ 图表 ============ */
+const GRID={color:'#eef2f7'};
+function bar(id,labels,data,colors,fmt){
+  const el=$(id); if(!el||el._done)return; el._done=true;
+  new Chart(el,{type:'bar',data:{labels,datasets:[{data,backgroundColor:colors,borderRadius:6}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+c.parsed.y+(fmt||'')}}},scales:{y:{grid:GRID,ticks:{callback:v=>v+(fmt||'')}},x:{grid:{display:false}}}}});
+}
+function doughnut(id,labels,data,colors){
+  const el=$(id); if(!el||el._done)return; el._done=true;
+  new Chart(el,{type:'doughnut',data:{labels,datasets:[{data,backgroundColor:colors,borderWidth:2,borderColor:'#fff'}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{boxWidth:12,font:{size:11}}},tooltip:{callbacks:{label:c=>' '+c.label+': '+money(c.parsed)+' 万元'}}}}});
+}
+function dashCharts(){
+  bar('chMargin',['全接收','不接收填埋','集团要求','低效线'],[13.58,12.46,8,6],['#7c3aed','#a78bfa','#94a3b8','#d97706'],'%');
+  doughnut('chInvest',INVEST_BREAK.map(x=>x.k),INVEST_BREAK.map(x=>x.v),['#7c3aed','#a78bfa','#cbd5e1']);
+  bar('chProfit',['全接收','不接收填埋场'],[210.86,146],['#7c3aed','#a78bfa'],'');
+  bar('chPay',PAYHIST.map(x=>x.k+'年'),PAYHIST.map(x=>x.v),['#a78bfa','#8b5cf6','#7c3aed'],'');
+}
+function finCharts(){
+  doughnut('chInvest2',INVEST_BREAK.map(x=>x.k),INVEST_BREAK.map(x=>x.v),['#7c3aed','#a78bfa','#cbd5e1']);
+  bar('chSens',['全接收','不接收填埋','收入降10%','最差回款'],[13.58,12.46,7.96,5.97],['#7c3aed','#a78bfa','#d97706','#dc2626'],'%');
+}
+function investCharts(){
+  doughnut('chInvest3',INVEST_BREAK.map(x=>x.k),INVEST_BREAK.map(x=>x.v),['#7c3aed','#a78bfa','#cbd5e1']);
+}
+
+/* ============ 初始化 ============ */
+renderDashboard();renderFinance();renderStaff();renderRisks();renderConclusion();
+renderBackground();renderBase();renderInvest();renderOps();renderDoc();
+dashCharts();
+</script>
+</body>
+</html>

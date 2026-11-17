@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>哈密项目零星收入项目 · 投资评审系统</title>
+<script src="../chart.min.js"></script>
+<script src="../chart-labels.js"></script>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --primary:#e11d48;--primary-dark:#be123c;--accent:#4f6ef7;--bg:#faf3f5;--card:#fff;
+  --text:#1e293b;--text-secondary:#64748b;--border:#e5e7eb;--danger:#dc2626;--warn:#d97706;--ok:#059669;
+  --sidebar-w:240px;--header-h:60px;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text)}
+.app-layout{display:none;min-height:100vh}
+.app-layout.active{display:flex}
+/* ===== Sidebar ===== */
+.sidebar{width:var(--sidebar-w);background:#2a1218;color:#fff;position:fixed;top:0;left:0;bottom:0;z-index:100;transition:transform .3s;display:flex;flex-direction:column}
+.sidebar-header{padding:16px 20px;border-bottom:1px solid rgba(255,255,255,.1);display:flex;align-items:center;gap:12px}
+.sidebar-header .logo-icon{font-size:1.6rem}
+.sidebar-header h2{font-size:.95rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sidebar-nav{flex:1;padding:12px 0;overflow-y:auto}
+.sidebar-nav .nav-item{display:flex;align-items:center;gap:12px;padding:11px 20px;color:rgba(255,255,255,.7);cursor:pointer;transition:all .2s;font-size:.92rem;border-left:3px solid transparent}
+.sidebar-nav .nav-item:hover{background:rgba(255,255,255,.06);color:#fff}
+.sidebar-nav .nav-item.active{background:rgba(225,29,72,.32);color:#fff;border-left-color:var(--primary)}
+.sidebar-nav .nav-item .nav-icon{font-size:1.15rem;width:22px;text-align:center}
+.sidebar-nav .nav-section{padding:8px 20px 4px;font-size:.72rem;text-transform:uppercase;color:rgba(255,255,255,.35);letter-spacing:.5px}
+.sidebar-nav .nav-group{margin:1px 0}
+.sidebar-nav .nav-group-header{display:flex;align-items:center;gap:12px;padding:11px 20px;color:rgba(255,255,255,.7);cursor:pointer;transition:all .2s;font-size:.92rem;border-left:3px solid transparent;user-select:none}
+.sidebar-nav .nav-group-header:hover{background:rgba(255,255,255,.06);color:#fff}
+.sidebar-nav .nav-group-header .nav-icon{font-size:1.15rem;width:22px;text-align:center}
+.sidebar-nav .nav-group-header .chev{margin-left:auto;font-size:.7rem;transition:transform .25s;opacity:.7}
+.sidebar-nav .nav-group.open .nav-group-header{color:#fff}
+.sidebar-nav .nav-group.open .nav-group-header .chev{transform:rotate(90deg)}
+.sidebar-nav .nav-group.has-active .nav-group-header{color:#fff;border-left-color:var(--primary)}
+.sidebar-nav .nav-sub{max-height:0;overflow:hidden;transition:max-height .28s ease}
+.sidebar-nav .nav-group.open .nav-sub{max-height:420px}
+.sidebar-nav .nav-sub .nav-item{padding-left:54px;font-size:.88rem}
+.sidebar-footer{padding:14px 20px;border-top:1px solid rgba(255,255,255,.1)}
+.sidebar-footer .tag{font-size:.72rem;color:rgba(255,255,255,.55);text-align:center}
+/* ===== Main ===== */
+.main-content{margin-left:var(--sidebar-w);flex:1;min-width:0;min-height:100vh;display:flex;flex-direction:column}
+.topbar{height:var(--header-h);background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px;padding:0 24px;position:sticky;top:0;z-index:50}
+.topbar .menu-btn{display:none;font-size:1.4rem;cursor:pointer;background:none;border:none;color:var(--text)}
+.topbar h1{font-size:1.15rem;font-weight:700}
+.topbar .status-pill{margin-left:auto;font-size:.78rem;font-weight:600;padding:5px 14px;border-radius:16px;background:#fef3c7;color:#b45309;border:1px solid #fde68a}
+.content{padding:24px;flex:1}
+.page{display:none;animation:fade .3s}
+.page.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+/* ===== Cards / KPI ===== */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:22px}
+.kpi{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px 20px;box-shadow:0 4px 14px rgba(15,23,42,.05)}
+.kpi .label{font-size:.8rem;color:var(--text-secondary)}
+.kpi .value{font-size:1.6rem;font-weight:800;margin-top:6px}
+.kpi .unit{font-size:.85rem;color:var(--text-secondary);font-weight:600;margin-left:3px}
+.kpi .note{font-size:.72rem;margin-top:5px;color:var(--text-secondary)}
+.kpi.warn .value{color:var(--warn)}
+.kpi.danger .value{color:var(--danger)}
+.kpi.ok .value{color:var(--ok)}
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;box-shadow:0 4px 14px rgba(15,23,42,.05);margin-bottom:20px;overflow:hidden}
+.card-header{padding:15px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.card-header h3{font-size:1rem;font-weight:700}
+.card-header .badge{font-size:.72rem;padding:3px 10px;border-radius:12px;background:#fff1f2;color:var(--primary-dark);border:1px solid #fecdd3;margin-left:auto}
+.card-body{padding:20px}
+.chart-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px;margin-bottom:20px}
+.chart-box{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;box-shadow:0 4px 14px rgba(15,23,42,.05)}
+.chart-box h4{font-size:.92rem;margin-bottom:14px;color:var(--text)}
+.chart-box .cv{position:relative;height:240px}
+/* ===== Tables ===== */
+table{width:100%;border-collapse:collapse;font-size:.86rem}
+th,td{padding:10px 12px;text-align:center;border-bottom:1px solid var(--border)}
+th{background:#fff5f6;color:var(--text-secondary);font-weight:600;font-size:.8rem}
+td.l,th.l{text-align:left}
+tr.subtotal{background:#f1f5f9;font-weight:700}
+tr.total{background:#fff1f2;font-weight:800}
+.tag-diff{display:inline-block;min-width:34px;padding:2px 8px;border-radius:10px;font-size:.78rem;font-weight:700}
+.tag-diff.neg{background:#fee2e2;color:#b91c1c}
+.tag-diff.pos{background:#dcfce7;color:#15803d}
+.tag-diff.zero{background:#f1f5f9;color:#94a3b8}
+/* ===== Info list ===== */
+.info-list{display:flex;flex-direction:column;gap:0}
+.info-item{padding:14px 0;border-bottom:1px dashed var(--border);display:grid;grid-template-columns:130px 1fr;gap:16px}
+.info-item:last-child{border-bottom:none}
+.info-item .k{font-weight:700;color:var(--primary-dark);font-size:.9rem}
+.info-item .v{color:var(--text);line-height:1.75;font-size:.9rem}
+.info-item .v p{margin:4px 0}
+/* ===== Risk ===== */
+.risk-item{border:1px solid var(--border);border-left-width:4px;border-radius:12px;padding:16px 18px;margin-bottom:14px;background:#fff}
+.risk-item.mid{border-left-color:var(--warn)}
+.risk-item.low{border-left-color:#94a3b8}
+.risk-item.high{border-left-color:var(--danger)}
+.risk-head{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.risk-level{font-size:.72rem;font-weight:700;padding:3px 10px;border-radius:10px}
+.risk-level.mid{background:#fef3c7;color:#b45309}
+.risk-level.low{background:#f1f5f9;color:#64748b}
+.risk-level.high{background:#fee2e2;color:#b91c1c}
+.risk-title{font-weight:700;font-size:.95rem}
+.risk-desc{font-size:.86rem;color:var(--text-secondary);line-height:1.75}
+/* ===== Conclusion ===== */
+.concl-box{background:linear-gradient(135deg,#fff1f2,#ffe4e6);border:1px solid #fecdd3;border-radius:14px;padding:22px;margin-bottom:20px}
+.concl-box .big{font-size:1.05rem;font-weight:700;color:var(--primary-dark);line-height:1.7}
+.steps{counter-reset:s;margin-top:6px}
+.step{position:relative;padding:12px 14px 12px 48px;border-bottom:1px dashed var(--border);font-size:.9rem;line-height:1.6}
+.step:last-child{border-bottom:none}
+.step::before{counter-increment:s;content:counter(s);position:absolute;left:12px;top:12px;width:26px;height:26px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:.82rem;font-weight:700}
+/* ===== Doc viewer ===== */
+.doc-toolbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:#fff;border:1px solid var(--border);border-radius:12px;padding:12px 16px;margin-bottom:16px}
+.doc-toolbar .dt-name{font-weight:700;font-size:.95rem}
+.doc-toolbar .dt-nav{display:flex;align-items:center;gap:8px;margin-left:auto}
+.doc-btn{border:1px solid var(--border);background:#f8fafc;color:var(--text);border-radius:8px;padding:7px 14px;font-size:.85rem;cursor:pointer;font-family:inherit;transition:all .2s}
+.doc-btn:hover:not(:disabled){background:var(--primary);color:#fff;border-color:var(--primary)}
+.doc-btn:disabled{opacity:.4;cursor:not-allowed}
+.doc-page-ind{font-size:.85rem;font-weight:600;min-width:70px;text-align:center}
+.doc-dl{font-size:.82rem;color:#fff;background:var(--primary);border:1px solid var(--primary);padding:7px 14px;border-radius:8px;font-weight:600;text-decoration:none}
+.pdf-single{background:#475569;border-radius:12px;padding:18px;display:flex;justify-content:center;align-items:flex-start;overflow:auto;max-height:78vh}
+.pdf-single img{flex:none;max-width:100%;height:auto;border-radius:6px;box-shadow:0 8px 30px rgba(0,0,0,.35);background:#fff}
+.doc-meta{font-size:.82rem;color:var(--text-secondary);margin-bottom:14px;line-height:1.6}
+@media(max-width:900px){
+  .sidebar{transform:translateX(-100%)}
+  .sidebar.open{transform:translateX(0)}
+  .sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:99}
+  .sidebar-overlay.open{display:block}
+  .main-content{margin-left:0}
+  .topbar .menu-btn{display:block}
+  .info-item{grid-template-columns:1fr;gap:4px}
+}
+
+/* ===== 评审资料（参照京良路文档布局） ===== */
+.doc-toolbar .dt-actions{display:flex;align-items:center;gap:8px;margin-left:auto;flex-wrap:wrap}
+.doc-btn{text-decoration:none}
+.doc-section{background:#fff;border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:18px;box-shadow:0 4px 14px rgba(15,23,42,.04)}
+.doc-section h3{font-size:1rem;color:var(--primary-dark);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+.doc-section h4{font-size:.92rem;margin:14px 0 8px;color:var(--text)}
+.doc-section table{min-width:640px}
+.doc-section p{font-size:.88rem;line-height:1.85;color:var(--text-secondary);margin:8px 0}
+.doc-section ul{margin:6px 0 6px 20px;font-size:.88rem;line-height:1.85;color:var(--text-secondary)}
+.doc-note{background:#f8fafc;border-left:3px solid var(--primary);padding:10px 14px;border-radius:0 8px 8px 0;font-size:.84rem;line-height:1.7;color:var(--text-secondary);margin:10px 0}
+.doc-note.warn{background:#fffbeb;border-left-color:var(--warn)}
+.reply-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+.reply{border:1px solid var(--border);border-radius:10px;padding:12px 14px;font-size:.84rem;line-height:1.75;color:var(--text-secondary);background:#fff}
+.reply b{display:block;color:var(--text);margin-bottom:4px;font-size:.82rem}
+.reply.invest{border-left:3px solid #3b82f6;background:#f8fbff}
+.reply.op{border-left:3px solid #f59e0b;background:#fffdf5}
+@media(max-width:900px){.reply-grid{grid-template-columns:1fr}}
+@media print{.sidebar,.sidebar-overlay,.topbar,.doc-toolbar{display:none!important}.main-content{margin:0!important}.content{padding:0!important}.doc-section{box-shadow:none;break-inside:avoid}}
+</style>
+</head>
+<body>
+<div class="app-layout active" id="appLayout">
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header"><span class="logo-icon">&#127961;</span><h2>哈密零星业务·增量服务</h2></div>
+    <nav class="sidebar-nav">
+      <div class="nav-section">主菜单</div>
+      <div class="nav-item active" onclick="navigateTo('dashboard',this)"><span class="nav-icon">&#128202;</span> 数据看板</div>
+      <div class="nav-item" onclick="navigateTo('finance',this)"><span class="nav-icon">&#128176;</span> 财务分析</div>
+      <div class="nav-item" onclick="navigateTo('staff',this)"><span class="nav-icon">&#128101;</span> 人车配置</div>
+      <div class="nav-item" onclick="navigateTo('risks',this)"><span class="nav-icon">&#9888;&#65039;</span> 风险预警</div>
+      <div class="nav-item" onclick="navigateTo('conclusion',this)"><span class="nav-icon">&#9989;</span> 评审结论</div>
+      <div class="nav-group" id="grpReview">
+        <div class="nav-group-header" onclick="toggleGroup(this)"><span class="nav-icon">&#128194;</span> 评审信息 <span class="chev">&#9656;</span></div>
+        <div class="nav-sub">
+          <div class="nav-item" onclick="navigateTo('background',this)"><span class="nav-icon">&#128214;</span> 背景信息</div>
+          <div class="nav-item" onclick="navigateTo('base',this)"><span class="nav-icon">&#9881;&#65039;</span> 基础信息</div>
+          <div class="nav-item" onclick="navigateTo('invest',this)"><span class="nav-icon">&#128188;</span> 投资信息</div>
+          <div class="nav-item" onclick="navigateTo('ops',this)"><span class="nav-icon">&#128736;&#65039;</span> 运营信息</div>
+        </div>
+      </div>
+      <div class="nav-group" id="grpMeeting">
+        <div class="nav-group-header" onclick="toggleGroup(this)"><span class="nav-icon">&#128203;</span> 评审资料 <span class="chev">&#9656;</span></div>
+        <div class="nav-sub">
+          <div class="nav-item" onclick="navigateTo('doc1',this)"><span class="nav-icon">&#128209;</span> 运营评审意见</div>
+        </div>
+      </div>
+    </nav>
+    <div class="sidebar-footer"><div class="tag">北控城市环境服务集团 · 内部评审</div></div>
+  </aside>
+
+  <div class="main-content">
+    <div class="topbar">
+      <button class="menu-btn" onclick="toggleSidebar()">&#9776;</button>
+      <h1 id="pageTitle">数据看板</h1>
+      <span class="status-pill">已中标 · 服务期 2026.9–12（4 个月）</span>
+    </div>
+    <div class="content">
+      <div class="page active" id="page-dashboard"></div>
+      <div class="page" id="page-finance"></div>
+      <div class="page" id="page-staff"></div>
+      <div class="page" id="page-risks"></div>
+      <div class="page" id="page-conclusion"></div>
+      <div class="page" id="page-background"></div>
+      <div class="page" id="page-base"></div>
+      <div class="page" id="page-invest"></div>
+      <div class="page" id="page-ops"></div>
+      <div class="page" id="page-doc1"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============ 数据（源自 投资评审报告 + 零星收入评审意见） ============ */
+const FIN = {
+  revTax:814.35, revNoTax:768.26, avgProfit:68.55, avgMargin:8.92, irr:31.96,
+  svc:814.35, invest:215.19, working:215.19, devInvest:0, prepFee:16.29,
+  mainSvc:26485.8, mainProfit:1749.53, mainMargin:8.5, mainPayRate:94.22, mainOverdue:1242.76
+};
+// 作业面积构成（万㎡）
+const AREA = [
+  {k:'道路清扫保洁', v:46.22},
+  {k:'园林绿化养护', v:14.33},
+  {k:'融媒体中心', v:5.17},
+  {k:'奉献广场', v:4.64},
+  {k:'滨河四路绿地', v:0.50}
+];
+// 车辆设备（依托现有，无新增购置）
+const VEH = [
+  ['道路清扫保洁','小型清扫车','2 辆','现有调配'],
+  ['道路清扫保洁','8吨洒水车','1 辆','现有调配'],
+  ['道路清扫保洁','多功能养护车','2 辆','现有调配'],
+  ['绿地养护','3吨洒水车','1 辆','现有调配'],
+  ['绿地养护','运输车','1 辆','现有调配'],
+  ['绿地养护','小型机械设备','8 台','现有调配'],
+  ['公厕管养','公厕','53 座','2026 年陆续接收']
+];
+const RISKS = [
+  {lv:'high',t:'业务链条不完善、回款保障不足',d:'城建投尚未与住建局签订本零星项目运营合同，需补齐上游授权、确保城建投拥有项目运营权；经沟通本次零星收入未纳入 2026 年度财政预算，回款缺少财政资金保障，需重点关注。'},
+  {lv:'mid',t:'派工单主体不匹配',d:'派工单由住建局直接向北控签发，而合同签约方为城建投，主体不一致。建议由城建投对该类派工单予以书面确认。'},
+  {lv:'mid',t:'往期服务费未确权',d:'协议服务期为 2026.9.1–2026.12.31，但 53 座公厕自 2026 年 1 月已开始运营。建议对历史已发生月份的服务费补充书面确权。'},
+  {lv:'mid',t:'结算条款不确定、绩效约定缺失',d:'服务费最终以政府书面确认或审计结果为准，相关标准未约定，存在结算金额不及预期风险；月度服务费含 80% 基础 + 20% 绩效，未约定考核标准及考核结果与费用的对应关系，建议补充明确。'},
+  {lv:'low',t:'期末人员优化风险',d:'本项目截止 2026 年底结束，若后续不续签，作业人员需进行优化；若未能及时完成人员优化，将导致项目利润下降。'}
+];
+const CONCL = {
+  head:'本项目为哈密市现有环卫项目增量服务（零星收入），依托现有项目公司及车辆设备资源，无新增固定资产投资及外部借款；服务费 814.35 万元（含税）、服务期 4 个月、平均净利润率 8.92%，可消化主项目优化的约 194 名一线人员，综合效益符合集团要求。鉴于本项目已接近运营期末，建议予以投资，并同步推进各项后续落实要求。',
+  pre:'投前落实（西北区域 + 项目负责人李伟）：在协议中明确结算条款、补充绩效考核办法。',
+  items:[
+    '推动城建投与住建局签订本零星项目运营合同或取得书面授权，明确城建投作为项目运营主体的合法授权来源；',
+    '与住建局 / 财政确认回款资金来源与拨付路径，争取将服务费纳入年度预算或取得财政部门书面回款承诺；',
+    '由城建投对住建局直接向北控签发的派工单予以书面确认；',
+    '梳理已实际作业内容，与住建局 / 城建投补充书面确权，明确计费期间、单价、作业量及应付金额。'
+  ]
+};
+
+/* ============ 渲染 ============ */
+const $=id=>document.getElementById(id);
+function money(n){return n.toLocaleString('zh-CN',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function diffTag(v){const n=Number(v);const cls=n<0?'neg':(n>0?'pos':'zero');const s=n>0?'+'+n:''+n;return '<span class="tag-diff '+cls+'">'+s+'</span>';}
+
+function renderDashboard(){
+  $('page-dashboard').innerHTML = `
+  <div class="kpi-grid">
+    <div class="kpi"><div class="label">合同服务费</div><div class="value">${FIN.svc}<span class="unit">万元</span></div><div class="note">含税 · 服务期 4 个月</div></div>
+    <div class="kpi ok"><div class="label">平均净利润率</div><div class="value">${FIN.avgMargin}<span class="unit">%</span></div><div class="note">高于集团 8% 及低效线 6%</div></div>
+    <div class="kpi"><div class="label">平均净利润</div><div class="value">${FIN.avgProfit}<span class="unit">万元</span></div><div class="note">测算期 4 个月</div></div>
+    <div class="kpi ok"><div class="label">内部收益率（税后）</div><div class="value">${FIN.irr}<span class="unit">%</span></div><div class="note">全投资口径</div></div>
+    <div class="kpi"><div class="label">初期总投资</div><div class="value">${FIN.invest}<span class="unit">万元</span></div><div class="note">全部流动资金 · 无设备投资</div></div>
+    <div class="kpi warn"><div class="label">一线作业人员</div><div class="value">197<span class="unit">人</span></div><div class="note">消化主项目优化约 194 人</div></div>
+  </div>
+  <div class="chart-row">
+    <div class="chart-box"><h4>净利润率对比（%）</h4><div class="cv"><canvas id="chMargin"></canvas></div></div>
+    <div class="chart-box"><h4>作业面积构成（万㎡）</h4><div class="cv"><canvas id="chArea"></canvas></div></div>
+  </div>
+  <div class="chart-row">
+    <div class="chart-box"><h4>收益构成（万元）</h4><div class="cv"><canvas id="chRev"></canvas></div></div>
+    <div class="chart-box"><h4>主项目关键指标（万元）</h4><div class="cv"><canvas id="chMain"></canvas></div></div>
+  </div>
+  <div class="card"><div class="card-header"><h3>项目关键指标</h3><span class="badge">投资评审报告 · 运营评审意见</span></div><div class="card-body">
+    <table><tbody>
+      <tr><td class="l">业务收入（含税）</td><td><b>${money(FIN.revTax)}</b> 万元</td><td class="l">业务收入（不含税）</td><td><b>${money(FIN.revNoTax)}</b> 万元</td></tr>
+      <tr><td class="l">平均净利润</td><td><b>${money(FIN.avgProfit)}</b> 万元</td><td class="l">平均净利润率</td><td><b>${FIN.avgMargin}%</b></td></tr>
+      <tr><td class="l">内部收益率（税后）</td><td><b>${FIN.irr}%</b></td><td class="l">初期总投资</td><td><b>${money(FIN.invest)}</b> 万元（全部流动资金）</td></tr>
+      <tr><td class="l">一线作业人员</td><td><b>197</b> 人（含绿化养护）</td><td class="l">车辆设备</td><td><b>无新增</b>（依托现有）</td></tr>
+    </tbody></table>
+  </div></div>`;
+}
+function renderFinance(){
+  $('page-finance').innerHTML = `
+  <div class="card"><div class="card-header"><h3>成本及利润</h3><span class="badge">服务期 4 个月测算</span></div><div class="card-body">
+    <table><thead><tr><th class="l">内容</th><th>金额（万元）</th><th class="l">说明</th></tr></thead><tbody>
+      <tr><td class="l">业务收入（含税）</td><td>${money(FIN.revTax)}</td><td class="l">合同服务费（2026.9.1–12.31）</td></tr>
+      <tr><td class="l">业务收入（不含税）</td><td>${money(FIN.revNoTax)}</td><td class="l">测算收入基数</td></tr>
+      <tr><td class="l">平均净利润</td><td>${money(FIN.avgProfit)}</td><td class="l">万元 / 测算期</td></tr>
+      <tr class="subtotal"><td class="l">平均净利润率</td><td>${FIN.avgMargin}%</td><td class="l">高于集团 8% 及低效项目最低 6%</td></tr>
+      <tr><td class="l">内部收益率（税后）</td><td>${FIN.irr}%</td><td class="l">全投资口径</td></tr>
+    </tbody></table>
+    <div class="doc-meta" style="margin-top:12px">项目不新增车辆设备投资，利用哈密市北控城市服务有限公司现有车辆设备作业，不计算折旧，仅计算车辆油料、水、电等其他物料消耗；司机成本按兼职增加加班费计。</div>
+  </div></div>
+  <div class="chart-row">
+    <div class="chart-box"><h4>收益构成（万元）</h4><div class="cv"><canvas id="chRev2"></canvas></div></div>
+    <div class="chart-box"><h4>净利润率对比（%）</h4><div class="cv"><canvas id="chMargin2"></canvas></div></div>
+  </div>
+  <div class="card"><div class="card-header"><h3>投资与费用</h3></div><div class="card-body">
+    <table><thead><tr><th class="l">类别</th><th>金额（万元）</th><th class="l">备注</th></tr></thead><tbody>
+      <tr><td class="l">流动资金</td><td>${money(FIN.working)}</td><td class="l">初期总投资全部为流动资金，由主项目解决</td></tr>
+      <tr><td class="l">新购及收购车辆设备</td><td>${money(FIN.devInvest)}</td><td class="l">依托现有车辆设备，无新增购置</td></tr>
+      <tr class="total"><td class="l">初期总投资</td><td>${money(FIN.invest)}</td><td class="l">无外部借款</td></tr>
+      <tr><td class="l">前期开荒费用</td><td>${money(FIN.prepFee)}</td><td class="l">按服务费的 2% 计算</td></tr>
+    </tbody></table>
+  </div></div>
+  <div class="card"><div class="card-header"><h3>依托的哈密主项目情况</h3><span class="badge">截至 2026 年 9 月</span></div><div class="card-body">
+    <table><tbody>
+      <tr><td class="l">主项目进场时间</td><td><b>2025-01-01</b></td><td class="l">主项目服务费</td><td><b>${money(FIN.mainSvc)}</b> 万元/年</td></tr>
+      <tr><td class="l">当年净利润</td><td><b>${money(FIN.mainProfit)}</b> 万元</td><td class="l">净利率</td><td><b>${FIN.mainMargin}%</b></td></tr>
+      <tr><td class="l">当期 / 累计回款率</td><td><b>${FIN.mainPayRate}%</b></td><td class="l">逾期应收账款余额</td><td><b>${money(FIN.mainOverdue)}</b> 万元</td></tr>
+    </tbody></table>
+    <div class="doc-meta" style="margin-top:12px">本项目 9 月 1 日入场，服务费暂无确权或支付，待甲方正式审计结果出具后回款，预计 12 月底回款；其中公厕部分自 2026 年 1 月陆续接收运营。</div>
+  </div></div>`;
+}
+function renderStaff(){
+  $('page-staff').innerHTML = `
+  <div class="card"><div class="card-header"><h3>1. 人员配置</h3><span class="badge">一线 197 人 · 不新增管理人员</span></div><div class="card-body">
+    <div class="info-list">
+      <div class="info-item"><div class="k">配置规模</div><div class="v">项目配置一线作业人员 <b>197 名</b>（含绿化养护人员）；不新增管理人员，依托现有哈密项目团队统筹。</div></div>
+      <div class="info-item"><div class="k">人员来源</div><div class="v">上报时主项目与本项目合计 <b>2,376 人</b>；2025 年项目平均一线作业人员 <b>2,438 人</b>。除项目优化外，本项目增量承担 <b>197 人</b> 人员成本，可消化主项目优化的约 <b>194 名</b> 一线人员。</div></div>
+    </div>
+  </div></div>
+  <div class="card"><div class="card-header"><h3>2. 车辆设备配置</h3><span class="badge">依托现有 · 无新增购置</span></div><div class="card-body">
+    <div class="doc-meta">项目无新增车辆设备投资，主要依托哈密市北控城市服务有限公司现有车辆设备作业、不新增购置；测算仅计油料、水、电等物料消耗，不计维修费、保险费、折旧或租金（免费使用），司机按兼职增加加班费。</div>
+    <table><thead><tr><th class="l">作业板块</th><th class="l">车辆 / 设备</th><th>数量</th><th>取得方式</th></tr></thead><tbody>
+      ${VEH.map(r=>`<tr><td class="l">${r[0]}</td><td class="l">${r[1]}</td><td><b>${r[2]}</b></td><td>${r[3]}</td></tr>`).join('')}
+    </tbody></table>
+  </div></div>`;
+}
+function renderRisks(){
+  const cnt={high:0,mid:0,low:0};RISKS.forEach(r=>cnt[r.lv]++);
+  const lbl={high:'高',mid:'中',low:'低'};
+  $('page-risks').innerHTML = `
+  <div class="kpi-grid">
+    <div class="kpi danger"><div class="label">高风险</div><div class="value">${cnt.high}</div></div>
+    <div class="kpi warn"><div class="label">中风险</div><div class="value">${cnt.mid}</div></div>
+    <div class="kpi"><div class="label">低风险</div><div class="value">${cnt.low}</div></div>
+    <div class="kpi"><div class="label">合计关注项</div><div class="value">${RISKS.length}</div></div>
+  </div>
+  ${RISKS.map((r,i)=>`<div class="risk-item ${r.lv}"><div class="risk-head"><span class="risk-level ${r.lv}">${lbl[r.lv]}风险</span><span class="risk-title">${i+1}. ${r.t}</span></div><div class="risk-desc">${r.d}</div></div>`).join('')}`;
+}
+function renderConclusion(){
+  $('page-conclusion').innerHTML = `
+  <div class="concl-box"><div class="big">${CONCL.head}</div></div>
+  <div class="card"><div class="card-header"><h3>投前落实</h3><span class="badge">西北区域 + 李伟</span></div><div class="card-body"><div class="doc-meta" style="margin:0">${CONCL.pre}</div></div></div>
+  <div class="card"><div class="card-header"><h3>投后落实要求</h3><span class="badge">西北区域 + 项目负责人李伟</span></div><div class="card-body"><div class="steps">
+    ${CONCL.items.map(t=>`<div class="step">${t}</div>`).join('')}
+  </div></div></div>`;
+}
+function infoCard(title, items, badge){
+  return `<div class="card"><div class="card-header"><h3>${title}</h3>${badge?`<span class="badge">${badge}</span>`:''}</div><div class="card-body"><div class="info-list">
+    ${items.map(it=>`<div class="info-item"><div class="k">${it[0]}</div><div class="v">${it[1]}</div></div>`).join('')}
+  </div></div></div>`;
+}
+function renderBackground(){
+  $('page-background').innerHTML = infoCard('背景信息',[
+    ['采购方式','直接委托（非招标）。'],
+    ['采购主体','哈密市城市建设投资发展有限公司（城建投）。'],
+    ['投资主体','哈密市北控城市服务有限公司（集团在哈密市现有项目公司）。'],
+    ['当地财政','2025 年哈密市地方财政收入 164.92 亿元（同比 +18.0%）；一般公共预算收入 133.20 亿元（同比 +10.5%，其中税收 92.70 亿元、非税 40.50 亿元）；一般公共预算支出 233.43 亿元（同比 +16.8%）。财政收支稳健增长，但税收收入同比下降 7.7%、非税占比偏高，需关注财政可持续性及城投平台付款能力。'],
+    ['项目性质','本项目为哈密市现有环卫项目的增量服务（零星收入），依托现有项目公司与车辆设备资源开展。']
+  ],'投资评审报告 · 项目概况') + `
+  <div class="card"><div class="card-header"><h3>依托的哈密主项目</h3></div><div class="card-body">
+    <div class="doc-meta">哈密市现有主项目进场时间 2025 年 1 月 1 日，项目服务费 26,485.8 万元/年。截至 2026 年 9 月，当年净利润 1,749.53 万元、净利率 8.5%，当期及累计回款率 94.22%，逾期应收账款余额 1,242.76 万元。</div>
+    <div class="doc-meta" style="margin-bottom:0">本项目 9 月 1 日入场，服务费暂无确权或支付，待甲方正式审计结果出具后回款，预计 12 月底回款，项目公司积极跟进协调；其中公厕部分自 2026 年 1 月陆续接收运营。</div>
+  </div></div>`;
+}
+function renderBase(){
+  $('page-base').innerHTML = infoCard('基础信息',[
+    ['项目模式','政府购买服务（直接委托 / 合同续签，非公开招标）。'],
+    ['服务期限','自 2026 年 9 月 1 日起至 2026 年 12 月 31 日止（共 4 个月）。2026 年新增接收公厕 53 座，因各座实际接收时间不同（2026 年 1–8 月陆续接收），公厕服务费按各座自实际接收之日起至 12 月 31 日的实际开放天数据实核算。'],
+    ['服务费','合同服务费 814.35 万元（含税）。'],
+    ['服务费来源','由甲方哈密市城市建设投资发展有限公司按月支付；城建投尚未与住建局签订本零星项目运营合同。'],
+    ['服务范围及内容','① 哈密瓜文化创意产业园：环卫保洁 462,182.16㎡、园林绿化养护 143,292.08㎡；② 融媒体中心：环卫保洁及绿化养护 51,695.03㎡；③ 奉献广场：服务面积 46,413㎡及区域改造施工；④ 滨河四路绿地 5,000㎡；⑤ 2026 年新增接收公厕 53 座。'],
+    ['付费方式','甲方按月对服务情况开展检查核定；月度服务费构成为 80% 基础 + 20% 绩效（具体考核标准合同未约定）；甲方根据核定结果确定最终支付金额，支付节奏不明确。'],
+    ['考核方式','合同未约定。'],
+    ['投标 / 履约保证金','不缴纳（非招标项目）/ 合同未约定。'],
+    ['调价方式','合同期内固定总价；甲方就该期间服务不再另行支付任何费用，乙方亦不再另行主张任何权利。']
+  ],'投资评审报告 · 基础信息');
+}
+function renderInvest(){
+  $('page-invest').innerHTML = infoCard('投资信息',[
+    ['投资主体','哈密市北控城市服务有限公司（集团在哈密市现有项目公司）。'],
+    ['资金来源','自有资金。'],
+    ['项目总投资','初期总投资 215.19 万元，全部为流动资金；项目不新增车辆设备投资，利用现有车辆设备作业、不计算折旧，运营流动资金由主项目解决。'],
+    ['融资方案','无（无外部借款）。'],
+    ['期末资产处置','无。'],
+    ['招标代理费','无（非招标项目）。'],
+    ['前期开荒费用','16.29 万元，按服务费的 2% 计算。']
+  ],'投资评审报告 · 投资信息') + `
+  <div class="chart-row"><div class="chart-box"><h4>初期投资构成（万元）</h4><div class="cv"><canvas id="chInvest"></canvas></div></div></div>`;
+}
+function renderOps(){
+  $('page-ops').innerHTML = infoCard('运营信息',[
+    ['运营单位','哈密市北控城市服务有限公司（现有项目公司）。'],
+    ['项目负责人','李伟。'],
+    ['注册资本金','10,000 万元。'],
+    ['股东及股权比例','北控城市环境服务集团有限公司（80%）；哈密市城市建设投资发展有限公司（20%）。'],
+    ['合作模式','——（依托现有项目公司运营）。'],
+    ['人员配置','一线作业人员 197 名（含绿化养护），不新增管理人员，依托现有哈密项目团队统筹。'],
+    ['车辆设备配置','无新增车辆设备投资，依托现有车辆设备作业（小型清扫车 2、8 吨洒水车 1、多功能养护车 2、3 吨洒水车 1、运输车 1、小型机械设备 8 台），不新增购置。']
+  ],'投资评审报告 · 运营信息');
+}
+/* ============ 评审资料 · 运营评审意见 ============ */
+const DOC={name:'哈密项目零星收入评审意见',file:'files/opinion.bin',dl:'哈密项目零星收入评审意见.pdf',meta:'城服运营中心 · 2026-10 · 道路综合清扫保洁 / 工服劳保 / 绿地养护 / 冬季除雪'};
+function renderDoc(){
+  $('page-doc1').innerHTML = `
+  <div class="doc-toolbar"><span class="dt-name">${DOC.name}</span><div class="dt-actions"><button class="doc-btn" onclick="window.print()">打印 / 导出 PDF</button><a class="doc-dl" href="${DOC.file}" download="${DOC.dl}">下载 PDF 原文</a></div></div>
+  <div class="doc-meta">${DOC.meta} · 以下为评审意见与投资回复的逐项整理。</div>
+  <div class="doc-section"><h3>一、道路综合清扫保洁</h3>
+    <p>园区内使用项目公司原有车辆设备：小型清扫车 2 辆、8 吨洒水车 1 辆、多功能养护车 2 辆。测算已计油费、水费，但维修费、保险费、折旧或租金（如免费使用可不计）未计，司机成本未计；如为兼职应按加班费计。上述费用均应按服务期 4 个月计算。</p>
+    <div class="doc-note">投资回复：投资分析报告已说明车辆使用项目公司现有车辆，不另计维修费、保险费、折旧或租金；司机增加加班费。</div>
+  </div>
+  <div class="doc-section"><h3>二、工服劳保和环卫工人易耗品</h3>
+    <p>服务期仅 4 个月，工服劳保和环卫工人易耗品应按 4 个月计算；原测算按年费用计列，应除以 3。</p>
+    <div class="doc-note">投资回复：已调整；公厕因开放时间不一致，工服劳保暂按全年估算。</div>
+  </div>
+  <div class="doc-section"><h3>三、绿地养护</h3>
+    <h4>1. 作业用水重复计算</h4>
+    <p>车辆作业用水（F276）与作业用水（F279）存在重复计列，测算中 F279 为 F276 的合计。</p>
+    <div class="doc-note">投资回复：车辆作业用水为洒水车用水，作业用水为喷灌用水，两项用途不同。</div>
+    <h4>2. 车辆设备费用</h4>
+    <p>园区内使用项目公司原有车辆设备：3 吨洒水车 1 辆、运输车 1 辆、小型机械设备 8 台。测算计了油费、水费，未计维修费、保险费、折旧或租金，司机成本亦未计；如为兼职应按加班费计，费用应按服务期 4 个月计算。</p>
+    <div class="doc-note">投资回复：车辆为公司现有车辆，不另计维修费、保险费、折旧或租金；司机增加加班费。</div>
+    <h4>3. 公众保险</h4>
+    <p>需明确公众保险按年计算还是按 4 个月计算。</p>
+    <div class="doc-note">投资回复：公众保险已调整按 4 个月计算。</div>
+  </div>
+  <div class="doc-section"><h3>四、冬季除雪</h3>
+    <p>需确认是否需要冬季除雪，如需要应补充相应费用。</p>
+    <div class="doc-note">投资回复：冬季除雪以人工为主，已计服务期内人员工资。</div>
+  </div>
+  <div class="doc-note warn">以上为运营评审意见要点整理；完整意见及回复请下载 PDF 原文核对。</div>`;
+}
+
+/* ============ 导航 ============ */
+function navigateTo(page, el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  $('page-'+page).classList.add('active');
+  document.querySelectorAll('.sidebar-nav .nav-item').forEach(n=>n.classList.remove('active'));
+  document.querySelectorAll('.sidebar-nav .nav-group').forEach(g=>g.classList.remove('has-active'));
+  if(el){ el.classList.add('active'); var g=el.closest('.nav-group'); if(g){g.classList.add('open');g.classList.add('has-active');} }
+  $('pageTitle').textContent={dashboard:'数据看板',finance:'财务分析',staff:'人车配置',risks:'风险预警',conclusion:'评审结论',background:'评审信息 · 背景信息',base:'评审信息 · 基础信息',invest:'评审信息 · 投资信息',ops:'评审信息 · 运营信息',doc1:'评审资料 · 运营评审意见'}[page]||page;
+  $('sidebar').classList.remove('open');$('sidebarOverlay').classList.remove('open');
+  if(page==='dashboard') setTimeout(()=>dashCharts(),40);
+  if(page==='finance') setTimeout(()=>finCharts(),40);
+  if(page==='invest') setTimeout(()=>investCharts(),40);
+}
+function toggleGroup(h){h.parentElement.classList.toggle('open');}
+function toggleSidebar(){$('sidebar').classList.toggle('open');$('sidebarOverlay').classList.toggle('open');}
+
+/* ============ 图表 ============ */
+const GRID={color:'#f3eef0'};
+function bar(id,labels,data,colors,fmt){
+  const el=$(id); if(!el||el._done)return; el._done=true;
+  new Chart(el,{type:'bar',data:{labels,datasets:[{data,backgroundColor:colors,borderRadius:6}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+c.parsed.y+(fmt||'')}}},scales:{y:{grid:GRID,ticks:{callback:v=>v+(fmt||'')}},x:{grid:{display:false}}}}});
+}
+function doughnut(id,labels,data,colors){
+  const el=$(id); if(!el||el._done)return; el._done=true;
+  new Chart(el,{type:'doughnut',data:{labels,datasets:[{data,backgroundColor:colors,borderWidth:2,borderColor:'#fff'}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{boxWidth:12,font:{size:11}}},tooltip:{callbacks:{label:c=>' '+c.label+': '+money(c.parsed)+' 万元'}}}}});
+}
+function dashCharts(){
+  bar('chMargin',['本项目','主项目','集团要求','低效线'],[8.92,8.5,8,6],['#e11d48','#fb7185','#94a3b8','#d97706'],'%');
+  bar('chArea',AREA.map(x=>x.k),AREA.map(x=>x.v),['#e11d48','#f43f5e','#fb7185','#fda4af','#fecdd3'],'');
+  bar('chRev',['业务收入(含税)','业务收入(不含税)','平均净利润'],[814.35,768.26,68.55],['#e11d48','#fb7185','#059669'],'');
+  bar('chMain',['主项目当年净利润','逾期应收账款'],[1749.53,1242.76],['#e11d48','#d97706'],'');
+}
+function finCharts(){
+  bar('chRev2',['业务收入(含税)','业务收入(不含税)','平均净利润'],[814.35,768.26,68.55],['#e11d48','#fb7185','#059669'],'');
+  bar('chMargin2',['本项目','主项目','集团要求','低效线'],[8.92,8.5,8,6],['#e11d48','#fb7185','#94a3b8','#d97706'],'%');
+}
+function investCharts(){
+  doughnut('chInvest',['流动资金','车辆设备投资'],[215.19,0.01],['#e11d48','#fecdd3']);
+}
+
+/* ============ 初始化 ============ */
+renderDashboard();renderFinance();renderStaff();renderRisks();renderConclusion();
+renderBackground();renderBase();renderInvest();renderOps();renderDoc();
+dashCharts();
+</script>
+</body>
+</html>

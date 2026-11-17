@@ -1,0 +1,1387 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>铜陵经开区城市管家一体化管理项目 · 投资评审系统</title>
+<style>
+
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --primary:#0891b2;--primary-dark:#0e7490;--accent:#4f6ef7;--bg:#f1f5f9;--card:#fff;
+  --text:#1e293b;--text-secondary:#64748b;--border:#e5e7eb;--danger:#dc2626;--warn:#d97706;--ok:#059669;
+  --sidebar-w:240px;--header-h:60px;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text)}
+.app-layout{display:none;min-height:100vh}
+.app-layout.active{display:flex}
+/* ===== Sidebar ===== */
+.sidebar{width:var(--sidebar-w);background:#12303a;color:#fff;position:fixed;top:0;left:0;bottom:0;z-index:100;transition:transform .3s;display:flex;flex-direction:column}
+.sidebar-header{padding:16px 20px;border-bottom:1px solid rgba(255,255,255,.1);display:flex;align-items:center;gap:12px}
+.sidebar-header h2{flex:1;max-width:100%}
+.sidebar-header h2{font-size:.95rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sidebar-nav{flex:1;padding:12px 0;overflow-y:auto}
+.sidebar-nav .nav-item{display:flex;align-items:center;gap:12px;padding:11px 20px;color:rgba(255,255,255,.7);cursor:pointer;transition:all .2s;font-size:.92rem;border-left:3px solid transparent}
+.sidebar-nav .nav-item:hover{background:rgba(255,255,255,.06);color:#fff}
+.sidebar-nav .nav-item.active{background:rgba(8,145,178,.3);color:#fff;border-left-color:var(--primary)}
+.sidebar-nav .nav-item .nav-icon{font-size:1.15rem;width:22px;text-align:center}
+.sidebar-nav .nav-section{padding:8px 20px 4px;font-size:.72rem;text-transform:uppercase;color:rgba(255,255,255,.35);letter-spacing:.5px}
+.sidebar-nav .nav-group{margin:1px 0}
+.sidebar-nav .nav-group-header{display:flex;align-items:center;gap:12px;padding:11px 20px;color:rgba(255,255,255,.7);cursor:pointer;transition:all .2s;font-size:.92rem;border-left:3px solid transparent;user-select:none}
+.sidebar-nav .nav-group-header:hover{background:rgba(255,255,255,.06);color:#fff}
+.sidebar-nav .nav-group-header .nav-icon{font-size:1.15rem;width:22px;text-align:center}
+.sidebar-nav .nav-group-header .chev{margin-left:auto;font-size:.7rem;transition:transform .25s;opacity:.7}
+.sidebar-nav .nav-group.open .nav-group-header{color:#fff}
+.sidebar-nav .nav-group.open .nav-group-header .chev{transform:rotate(90deg)}
+.sidebar-nav .nav-group.has-active .nav-group-header{color:#fff;border-left-color:var(--primary)}
+.sidebar-nav .nav-sub{max-height:0;overflow:hidden;transition:max-height .28s ease}
+.sidebar-nav .nav-group.open .nav-sub{max-height:420px}
+.sidebar-nav .nav-sub .nav-item{padding-left:54px;font-size:.88rem}
+.sidebar-footer{padding:14px 20px;border-top:1px solid rgba(255,255,255,.1)}
+.sidebar-footer .tag{font-size:.72rem;color:rgba(255,255,255,.55);text-align:center}
+/* ===== Main ===== */
+.main-content{margin-left:var(--sidebar-w);flex:1;min-width:0;min-height:100vh;display:flex;flex-direction:column}
+.topbar{height:var(--header-h);background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px;padding:0 24px;position:sticky;top:0;z-index:50}
+.topbar .menu-btn{display:none;font-size:1.4rem;cursor:pointer;background:none;border:none;color:var(--text)}
+.topbar h1{font-size:1.15rem;font-weight:700}
+.topbar .status-pill{margin-left:auto;font-size:.78rem;font-weight:600;padding:5px 14px;border-radius:16px;background:#fef3c7;color:#b45309;border:1px solid #fde68a}
+.content{padding:24px;flex:1}
+.page{display:none;animation:fade .3s}
+.page.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+/* ===== Cards / KPI ===== */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:22px}
+.kpi-grid.k4{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media(max-width:1200px){.kpi-grid.k4{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:760px){.kpi-grid.k4{grid-template-columns:1fr}}
+.kpi{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px 20px;box-shadow:0 4px 14px rgba(15,23,42,.05)}
+.kpi .label{font-size:.8rem;color:var(--text-secondary)}
+.kpi .value{font-size:1.6rem;font-weight:800;margin-top:6px}
+.kpi .unit{font-size:.85rem;color:var(--text-secondary);font-weight:600;margin-left:3px}
+.kpi .note{font-size:.72rem;margin-top:5px;color:var(--text-secondary)}
+.kpi.warn .value{color:var(--warn)}
+.kpi.danger .value{color:var(--danger)}
+.kpi.ok .value{color:var(--ok)}
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;box-shadow:0 4px 14px rgba(15,23,42,.05);margin-bottom:20px;overflow:hidden}
+.card-header{padding:15px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.card-header h3{font-size:1rem;font-weight:700}
+.card-header .badge{font-size:.72rem;padding:3px 10px;border-radius:12px;background:#ecfeff;color:var(--primary-dark);border:1px solid #a5f3fc;margin-left:auto}
+.card-body{padding:20px}
+.chart-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px;margin-bottom:20px}
+.chart-box{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;box-shadow:0 4px 14px rgba(15,23,42,.05)}
+.chart-box h4{font-size:.92rem;margin-bottom:14px;color:var(--text)}
+.chart-box .cv{position:relative;height:240px}
+/* ===== Tables ===== */
+table{width:100%;border-collapse:collapse;font-size:.86rem}
+th,td{padding:10px 12px;text-align:center;border-bottom:1px solid var(--border)}
+th{background:#f8fafc;color:var(--text-secondary);font-weight:600;font-size:.8rem}
+td.l,th.l{text-align:left}
+tr.subtotal{background:#f1f5f9;font-weight:700}
+tr.total{background:#ecfeff;font-weight:800}
+.tag-diff{display:inline-block;min-width:34px;padding:2px 8px;border-radius:10px;font-size:.78rem;font-weight:700}
+.tag-diff.neg{background:#fee2e2;color:#b91c1c}
+.tag-diff.pos{background:#dcfce7;color:#15803d}
+.tag-diff.zero{background:#f1f5f9;color:#94a3b8}
+.tag{display:inline-block;padding:2px 9px;border-radius:10px;font-size:.75rem;font-weight:700}
+.tag.ok{background:#dcfce7;color:#15803d}.tag.warn{background:#fef3c7;color:#b45309}.tag.bad{background:#fee2e2;color:#b91c1c}.tag.info{background:#dbeafe;color:#1d4ed8}
+.neg{color:#b91c1c}
+.pos{color:#15803d}
+/* ===== Info list ===== */
+.info-list{display:flex;flex-direction:column;gap:0}
+.info-item{padding:14px 0;border-bottom:1px dashed var(--border);display:grid;grid-template-columns:130px 1fr;gap:16px}
+.info-item:last-child{border-bottom:none}
+.info-item .k{font-weight:700;color:var(--primary-dark);font-size:.9rem}
+.info-item .v{color:var(--text);line-height:1.75;font-size:.9rem}
+.info-item .v p{margin:4px 0}
+/* ===== Tabs ===== */
+.tabs{display:flex;flex-wrap:wrap;gap:8px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:6px;margin-bottom:20px;box-shadow:0 4px 14px rgba(15,23,42,.04)}
+.tab{border:none;background:transparent;color:var(--text-secondary);font-family:inherit;font-size:.88rem;font-weight:600;padding:9px 18px;border-radius:8px;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:7px;white-space:nowrap}
+.tab:hover{background:#f1f5f9;color:var(--text)}
+.tab.active{background:var(--primary);color:#fff;box-shadow:0 2px 8px rgba(8,145,178,.28)}
+.tab-count{font-size:.72rem;font-weight:700;padding:1px 7px;border-radius:9px;background:#f1f5f9;color:var(--text-secondary)}
+.tab.active .tab-count{background:rgba(255,255,255,.22);color:#fff}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+.veh-compare{display:grid;grid-template-columns:1fr;gap:18px;align-items:start}
+.veh-compare .tbl-scroll table{font-size:.84rem}
+.veh-compare .tbl-scroll th,.veh-compare .tbl-scroll td{padding:9px 10px}
+.subtabs{display:flex;width:fit-content;align-items:center;gap:6px;margin:0 0 18px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:5px;box-shadow:0 4px 14px rgba(15,23,42,.04)}
+.staff-compare-tabs{width:100%;overflow-x:auto;flex-wrap:nowrap;justify-content:flex-start}
+.staff-compare-panel{display:none}
+.staff-compare-panel.active{display:block}
+.subtab{border:none;background:transparent;color:var(--text-secondary);font-family:inherit;font-size:.84rem;font-weight:600;padding:8px 16px;border-radius:7px;cursor:pointer;transition:all .2s;white-space:nowrap}
+.subtab:hover{background:#f1f5f9;color:var(--text)}
+.subtab.active{background:#e0f2fe;color:var(--primary-dark);box-shadow:inset 0 0 0 1px #bae6fd}
+.veh-subpanel{display:none}
+.veh-subpanel.active{display:block}
+.sub-h{font-size:.88rem;margin:10px 0}
+@media(max-width:1000px){.veh-compare{grid-template-columns:1fr;gap:18px}}
+@media(max-width:760px){.tabs{gap:6px;padding:5px}.tab{flex:1 0 auto;justify-content:center;padding:8px 10px;font-size:.82rem}.subtabs{width:100%;justify-content:space-between}.subtab{flex:1;text-align:center;padding:8px 4px}.staff-compare-tabs{justify-content:flex-start}.staff-compare-tabs .subtab{flex:0 0 auto}}
+/* ===== Risk ===== */
+.risk-item{border:1px solid var(--border);border-left-width:4px;border-radius:12px;padding:16px 18px;margin-bottom:14px;background:#fff}
+.risk-item.mid{border-left-color:var(--warn)}
+.risk-item.low{border-left-color:#94a3b8}
+.risk-item.high{border-left-color:var(--danger)}
+.risk-head{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.risk-level{font-size:.72rem;font-weight:700;padding:3px 10px;border-radius:10px}
+.risk-level.mid{background:#fef3c7;color:#b45309}
+.risk-level.low{background:#f1f5f9;color:#64748b}
+.risk-level.high{background:#fee2e2;color:#b91c1c}
+.risk-title{font-weight:700;font-size:.95rem}
+.risk-desc{font-size:.86rem;color:var(--text-secondary);line-height:1.75}
+.risk-domain{margin-left:auto;font-size:.72rem;color:#475569;background:#f1f5f9;padding:3px 9px;border-radius:9px;white-space:nowrap}
+.risk-grid{display:grid;grid-template-columns:1.15fr 1fr;gap:12px;margin-top:12px;padding-top:12px;border-top:1px dashed var(--border)}
+.risk-block{background:#f8fafc;border:1px solid #eef2f7;border-radius:10px;padding:10px 12px}
+.risk-block b{display:block;font-size:.74rem;color:#0e7490;margin-bottom:4px;letter-spacing:.04em}
+.risk-block p{font-size:.82rem;color:var(--text-secondary);line-height:1.72;margin:0}
+.risk-meta{display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:10px;font-size:.74rem;color:#64748b}
+.risk-meta span{line-height:1.6}
+.risk-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:18px}
+.risk-stat{background:#fff;border:1px solid var(--border);border-radius:12px;padding:14px 16px}
+.risk-stat b{display:block;font-size:1.35rem;line-height:1.25;color:var(--primary-dark)}
+.risk-stat span{font-size:.78rem;color:var(--text-secondary)}
+.risk-stat.warn b{color:#b45309}
+.risk-stat.danger b{color:#b91c1c}
+@media(max-width:1000px){.risk-grid{grid-template-columns:1fr}}
+@media(max-width:760px){.risk-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.risk-head{flex-wrap:wrap}.risk-domain{margin-left:0}}
+@media(max-width:560px){.risk-stats{grid-template-columns:1fr}}
+.empty-state{padding:38px 20px;text-align:center;border:1px dashed var(--border);border-radius:14px;background:#fff;color:var(--text-secondary)}
+.empty-state .es-title{font-weight:700;color:var(--text);font-size:.95rem;margin-bottom:6px}
+.empty-state .es-sub{font-size:.84rem;line-height:1.7}
+/* ===== Conclusion ===== */
+.concl-box{background:linear-gradient(135deg,#ecfeff,#f0f9ff);border:1px solid #a5f3fc;border-radius:14px;padding:22px;margin-bottom:20px}
+.concl-box .big{font-size:1.05rem;font-weight:700;color:var(--primary-dark);line-height:1.7}
+.steps{counter-reset:s;margin-top:6px}
+.step{position:relative;padding:12px 14px 12px 48px;border-bottom:1px dashed var(--border);font-size:.9rem;line-height:1.6}
+.step:last-child{border-bottom:none}
+.step::before{counter-increment:s;content:counter(s);position:absolute;left:12px;top:12px;width:26px;height:26px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:.82rem;font-weight:700}
+/* ===== Doc viewer ===== */
+.doc-toolbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:#fff;border:1px solid var(--border);border-radius:12px;padding:12px 16px;margin-bottom:16px}
+.doc-toolbar .dt-name{font-weight:700;font-size:.95rem}
+.doc-toolbar .dt-nav{display:flex;align-items:center;gap:8px;margin-left:auto}
+.doc-btn{border:1px solid var(--border);background:#f8fafc;color:var(--text);border-radius:8px;padding:7px 14px;font-size:.85rem;cursor:pointer;font-family:inherit;transition:all .2s}
+.doc-btn:hover:not(:disabled){background:var(--primary);color:#fff;border-color:var(--primary)}
+.doc-btn:disabled{opacity:.4;cursor:not-allowed}
+.doc-page-ind{font-size:.85rem;font-weight:600;min-width:70px;text-align:center}
+.doc-dl{font-size:.82rem;color:#fff;background:var(--primary);border:1px solid var(--primary);padding:7px 14px;border-radius:8px;font-weight:600;text-decoration:none}
+.pdf-single{background:#475569;border-radius:12px;padding:18px;display:flex;justify-content:center;align-items:flex-start;overflow:auto;max-height:78vh}
+.pdf-single img{flex:none;max-width:100%;height:auto;border-radius:6px;box-shadow:0 8px 30px rgba(0,0,0,.35);background:#fff}
+.doc-meta{font-size:.82rem;color:var(--text-secondary);margin-bottom:14px;line-height:1.6}
+@media(max-width:900px){
+  .sidebar{transform:translateX(-100%)}
+  .sidebar.open{transform:translateX(0)}
+  .sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:99}
+  .sidebar-overlay.open{display:block}
+  .main-content{margin-left:0}
+  .topbar .menu-btn{display:block}
+  .info-item{grid-template-columns:1fr;gap:4px}
+}
+
+/* ===== 上会资料（参照京良路文档布局） ===== */
+.doc-toolbar .dt-actions{display:flex;align-items:center;gap:8px;margin-left:auto;flex-wrap:wrap}
+.doc-btn{text-decoration:none}
+.doc-section{background:#fff;border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:18px;box-shadow:0 4px 14px rgba(15,23,42,.04)}
+.doc-section h3{font-size:1rem;color:var(--primary-dark);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+.doc-section h4{font-size:.92rem;margin:14px 0 8px;color:var(--text)}
+.doc-section table{min-width:640px}
+.doc-section p{font-size:.88rem;line-height:1.85;color:var(--text-secondary);margin:8px 0}
+.doc-section ul{margin:6px 0 6px 20px;font-size:.88rem;line-height:1.85;color:var(--text-secondary)}
+.doc-note{background:#f8fafc;border-left:3px solid var(--primary);padding:10px 14px;border-radius:0 8px 8px 0;font-size:.84rem;line-height:1.7;color:var(--text-secondary);margin:10px 0}
+.doc-note.warn{background:#fffbeb;border-left-color:var(--warn)}
+.sheet-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:10px}
+.sheet-item{display:flex;gap:11px;align-items:flex-start;padding:12px 14px;border:1px solid var(--border);border-radius:10px;background:#f8fafc}
+.sheet-item .sn{flex:none;width:28px;height:28px;border-radius:8px;background:#ecfeff;color:var(--primary-dark);display:flex;align-items:center;justify-content:center;font-size:.76rem;font-weight:800}
+.sheet-item b{font-size:.86rem;line-height:1.5}
+.sheet-item .sd{display:block;font-size:.78rem;color:var(--text-secondary);line-height:1.6;margin-top:2px}
+.reply-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+.reply{border:1px solid var(--border);border-radius:10px;padding:12px 14px;font-size:.84rem;line-height:1.75;color:var(--text-secondary);background:#fff}
+.reply b{display:block;color:var(--text);margin-bottom:4px;font-size:.82rem}
+.reply.invest{border-left:3px solid #3b82f6;background:#f8fbff}
+.reply.op{border-left:3px solid #f59e0b;background:#fffdf5}
+@media(max-width:900px){.reply-grid{grid-template-columns:1fr}}
+/* ===== 数据看板 / 财务 / 人车 新增组件 ===== */
+.grid{display:grid;gap:16px}
+.grid>*{min-width:0}
+.grid.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.grid.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.grid.g4{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media(max-width:1200px){.grid.g4{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:760px){.grid.g2,.grid.g3,.grid.g4{grid-template-columns:1fr}}
+.cash-layout{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:18px;align-items:stretch}
+.cash-layout .kpi-grid{margin:0;height:100%;grid-template-columns:1fr;grid-template-rows:repeat(4,minmax(0,1fr));gap:12px}
+.cash-layout .kpi{padding:14px 18px;display:flex;flex-direction:column;justify-content:center}
+@media(max-width:980px){.cash-layout{grid-template-columns:1fr}.cash-layout .kpi-grid{height:auto;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:auto}}
+@media(max-width:560px){.cash-layout .kpi-grid{grid-template-columns:1fr}}
+.tbl-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.tbl-scroll table{min-width:720px}
+.tbl-scroll.narrow table{min-width:520px}
+.tbl-scroll table th:first-child,.tbl-scroll table td:first-child{white-space:nowrap}
+.tbl-scroll.narrow table th{white-space:nowrap}
+th.n,td.n{text-align:right;font-variant-numeric:tabular-nums}
+th.c,td.c{text-align:center}
+.sec-note{font-size:.8rem;color:var(--text-secondary);line-height:1.75;margin-top:10px}
+.pill{display:inline-block;font-size:.64rem;font-weight:700;padding:1px 6px;border-radius:8px;margin-left:4px;white-space:nowrap}
+.pill.warn{background:#fef3c7;color:#b45309}
+.pill.bad{background:#fee2e2;color:#b91c1c}
+.pill.ok{background:#dcfce7;color:#15803d}
+.bench{margin-top:26px}
+.bench:first-child{margin-top:4px}
+.bench .bt{font-size:.8rem;color:var(--text-secondary);margin-bottom:17px;font-weight:600}
+.bench .bar{position:relative;height:24px;background:#eef2f7;border-radius:7px}
+.bench .fill{height:100%;border-radius:7px;position:relative;min-width:2px}
+.bench .cap{position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:.7rem;font-weight:800;color:#fff;white-space:nowrap;z-index:3;text-shadow:0 1px 2px rgba(0,0,0,.25)}
+.bench .mk{position:absolute;top:-6px;bottom:-6px;width:2px;background:#334155;z-index:2}
+.bench .mk span{position:absolute;bottom:calc(100% + 5px);left:50%;transform:translateX(-50%);font-size:.64rem;font-weight:700;color:#334155;white-space:nowrap}
+.bench-scale{display:flex;justify-content:space-between;font-size:.64rem;color:#94a3b8;margin-top:5px}
+.kv{display:grid;grid-template-columns:76px 1fr;gap:9px 12px;font-size:.85rem;line-height:1.75}
+.kv dt{font-weight:700;color:var(--primary-dark)}
+.kv dd{color:var(--text-secondary)}
+.cv{position:relative}
+.cv.mid{height:280px}
+.cv.tall{height:300px}
+.cv.xl{height:380px}
+@media print{.sidebar,.sidebar-overlay,.topbar,.doc-toolbar{display:none!important}.main-content{margin:0!important}.content{padding:0!important}.doc-section{box-shadow:none;break-inside:avoid}}
+.concl-meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.concl-box .sub{font-size:.86rem;color:#475569;line-height:1.85;margin-top:8px}
+.timeline{margin-top:4px}
+.tl-item{position:relative;padding:0 0 16px 22px;border-left:2px solid #dbe2ff}
+.tl-item:last-child{border-left-color:transparent;padding-bottom:0}
+.tl-item::before{content:"";position:absolute;left:-7px;top:2px;width:12px;height:12px;border-radius:50%;background:var(--primary)}
+.tl-date{font-size:.76rem;color:#64748b;font-weight:700}
+.tl-title{font-size:.9rem;font-weight:800;margin:2px 0 4px}
+.tl-desc{font-size:.82rem;color:#475569;line-height:1.75}
+.owner{display:block;margin-top:4px;color:#64748b;font-size:.76rem}
+.card-body.no-padding{padding:0}
+.table-note{font-size:12.5px;color:var(--text-secondary);line-height:1.8;padding:10px 16px 0;border-top:1px dashed var(--border);margin-top:8px}
+tr.highlight td{background:#ecfdf5}
+.pill.info{background:#eff6ff;color:#1d4ed8}
+.doc-list{display:flex;flex-direction:column;gap:10px;margin-top:6px}
+.doc-row{display:flex;align-items:center;justify-content:space-between;gap:14px;border:1px solid var(--border);border-radius:10px;padding:12px 14px;background:#fbfdff}
+.doc-row b{font-size:.9rem}
+.doc-sub{font-size:12px;color:var(--text-secondary);line-height:1.7;margin-top:3px}
+
+.bench-legend{position:relative;height:22px;margin:2px 0 8px}
+.bench-legend span{position:absolute;top:0;transform:translateX(-50%);font-size:.68rem;color:var(--text-secondary);font-weight:600;white-space:nowrap}
+.bench-legend span:first-child{transform:none}
+.bench-legend span:last-child{transform:none}
+.sub-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 16px}
+.sub-tab{border:1px solid var(--border);background:#fff;color:var(--text-secondary);border-radius:8px;padding:7px 13px;font-size:.84rem;font-weight:600;cursor:pointer;font-family:inherit}
+.sub-tab.active{background:#eef2ff;border-color:#c7d2fe;color:#3730a3}
+.fin-kpi{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:4px 0 16px}
+.fin-kpi>div{background:#f8fafc;border:1px solid var(--border);border-radius:10px;padding:11px 13px}
+.fin-kpi b{display:block;font-size:1.05rem;color:var(--primary-dark);margin-top:2px}
+@media(max-width:700px){.fin-kpi{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+</style>
+<script src="chart.min.js"></script>
+<script src="chart-labels.js"></script>
+</head>
+<body>
+<div class="app-layout active" id="appLayout">
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header"><h2>铜陵经开项目</h2></div>
+    <nav class="sidebar-nav">
+      <div class="nav-section">主菜单</div>
+      <div class="nav-item active" onclick="navigateTo('dashboard',this)"><span class="nav-icon">&#128202;</span> 数据看板</div>
+      <div class="nav-item" onclick="navigateTo('finance',this)"><span class="nav-icon">&#128176;</span> 财务分析</div>
+      <div class="nav-item" onclick="navigateTo('staff',this)"><span class="nav-icon">&#128101;</span> 人车配置</div>
+      <div class="nav-item" onclick="navigateTo('risks',this)"><span class="nav-icon">&#9888;&#65039;</span> 风险预警</div>
+      <div class="nav-item" onclick="navigateTo('conclusion',this)"><span class="nav-icon">&#9989;</span> 评审结论</div>
+      <div class="nav-item" id="navReview" onclick="navigateTo('background',this)"><span class="nav-icon">&#128194;</span> 评审信息</div>
+      <div class="nav-item" id="navDoc" onclick="navigateTo('doc1',this)"><span class="nav-icon">&#128203;</span> 上会资料</div>
+    </nav>
+    <div class="sidebar-footer"><div class="tag">北控城市环境服务集团 · 内部评审</div></div>
+  </aside>
+
+  <div class="main-content">
+    <div class="topbar">
+      <button class="menu-btn" onclick="toggleSidebar()">&#9776;</button>
+      <h1 id="pageTitle">数据看板</h1>
+      <span class="status-pill">待评审 · 西南区域 · 开标 2026-11-18</span>
+    </div>
+    <div class="content">
+      <div class="page active" id="page-dashboard"></div>
+      <div class="page" id="page-finance"></div>
+      <div class="page" id="page-staff"></div>
+      <div class="page" id="page-risks"></div>
+      <div class="page" id="page-conclusion"></div>
+      <div class="page" id="page-background"></div>
+      <div class="page" id="page-base"></div>
+      <div class="page" id="page-invest"></div>
+      <div class="page" id="page-ops"></div>
+      <div class="page" id="page-doc1"></div>
+      <div class="page" id="page-doc2"></div>
+      <div class="page" id="page-doc3"></div>
+<div class="page" id="page-doc4"></div>
+<div class="page" id="page-doc5"></div>
+    </div>
+  </div>
+</div>
+<script>
+
+/* ============ 数据（源自投资评审报告、评审会提示 11.16、五个测算方案） ============ */
+const FIN = {
+  revTax:1952.28, revNoTax:1841.77, avgProfit:170.69, avgMargin:9.20, minMargin:7.57,
+  irr:38.86, irrEquity:127.00, cap:2030.05, limit:2484, invest:410.18, investRatio:20.20,
+  devInvest:61.99, devRatio:3.05, prepFee:25.58, prepRatio:1.26
+};
+const INVEST_BREAK = [
+  {k:'新购及收购车辆设备', v:61.99},
+  {k:'前期开办费', v:25.58},
+  {k:'流动资金', v:322.61}
+];
+const SVC_BREAK = [
+  {k:'环卫保洁', v:512.80, term:'限价'},
+  {k:'园林绿化', v:1972.89, term:'限价'},
+  {k:'市政设施', v:850.56, term:'北水'},
+  {k:'水体管护', v:472.98, term:'北水'}
+];
+const ROUND = {prev:1588.66, cur:2030.05, budgetPrev:1983, budgetCur:2484};
+/* 方案二（推荐）三年收益，不含税，万元 */
+const YEARS = {
+  labels:['2027（首年）','2028（第2年）','2029（第3年）'],
+  revTax:[1796.73,2030.05,2030.05],
+  rev:[1695.03,1915.14,1915.14],
+  cost:[1494.45,1617.70,1636.60],
+  tax:[75.31,101.38,101.38],
+  dep:[18.29,18.29,18.29],
+  profitTotal:[171.18,265.25,246.35],
+  taxIncome:[42.79,66.31,61.59],
+  net:[128.38,198.94,184.76],
+  margin:[7.57,10.39,9.65]
+};
+const SEG_COST = [
+  {k:'园林绿化管养', v:1124.91, c:'#14b8a6'},
+  {k:'环卫保洁', v:260.95, c:'#0891b2'},
+  {k:'生活垃圾收运', v:48.69, c:'#4f6ef7'},
+  {k:'公厕保洁', v:13.46, c:'#f59e0b'},
+  {k:'转运站运行', v:8.07, c:'#8b5cf6'},
+  {k:'冬季除雪', v:0.03, c:'#dc2626'}
+];
+const FIN5=[{"no":1,"file":"方案一（实际运营配置）.xlsx","name":"方案一 实际运营配置","revTax":2030.0529515599997,"life":3,"staff":171,"mgmt":8,"invest":455.82788252585095,"veh":61.989999999999995,"smart":0,"civil":0,"open":25.58,"working":368.25788252585096,"net":187.2697841648096,"margin":0.09778364207798411,"irr":0.42122289538383495,"capIrr":0.4213128268718721,"pl":{"revTax":[2030.0529515599997,2030.0529515599997,2030.0529515599997],"revNoTax":[1915.1442939245278,1915.1442939245278,1915.1442939245278],"taxAdd":[90.0973810888486,101.380736841061,101.380736841061],"cost":[1646.6741217709773,1617.7041217709773,1636.6041217709774],"fin":[3.04507942734,3.04507942734,3.04507942734],"dep":[18.28613569321534,18.28613569321534,18.28613569321534],"profit":[237.48566620204718,265.2467352285957,246.3467352285956],"incomeTax":[59.371416550511796,66.31168380714892,61.5866838071489],"net":[178.11424965153537,198.93505142144676,184.7600514214467],"marginYear":[0.0930030443223379,0.10387470649210853,0.09647317541950587],"avg":{"revTax":2030.0529515599999,"revNoTax":1915.1442939245278,"cost":1633.6607884376438,"profit":249.6930455530795,"net":187.2697841648096,"marginYear":0.09778364207798411}},"cash":{"现金流入":[null,2030.0529515599997,2030.0529515599997,2400.725000752517],"现金流出":[600,1676.523510463794,1645.1393437971274,1664.0393437971275],"初期投资（车辆、设备、土建、智慧环卫、开办费）":[87.57,0,0,0],"运行成本":[null,1671.0642643697875,1642.0942643697874,1660.9942643697875],"税金及附加":[null,90.0973810888486,101.380736841061,101.380736841061],"所得税前净现金流量（1-2）":[-600,353.5294410962056,384.9136077628723,736.6856569553897],"所得税后净现金流量（3-5）":[-600,294.15802454569376,318.60192395572335,675.0989731482408],"所得税后累计净现金流量":[-600,-305.84197545430624,12.759948501417114,687.858921649658]},"cashIrr":0.42122289538383495,"costItems":[{"k":"人工成本","v":1014.4946203034482},{"k":"工服劳保","v":10.5077},{"k":"人工消耗品","v":11.962799999999998},{"k":"直接材料费","v":128.41633688490265},{"k":"机械费用","v":102.1104},{"k":"机械费用-维修费","v":26.1},{"k":"机械费用-车险、年检","v":10.5},{"k":"机械费用-GPS服务","v":0.5},{"k":"动力费用","v":14.792},{"k":"动力费用-作业用电","v":6.4311},{"k":"取暖","v":0},{"k":"除臭消杀","v":1.7403},{"k":"租赁费","v":94.8},{"k":"其它","v":23.7605},{"k":"外包费用","v":10}],"costTotal":1456.1157571883507},{"no":2,"file":"方案二（实际运营推迟-环卫27年7月1日进场）.xlsx","name":"方案二 推迟进场（推荐）","revTax":2030.0529515599997,"life":3,"staff":171,"mgmt":8,"invest":410.1820836564545,"veh":61.989999999999995,"smart":0,"civil":0,"open":25.58,"working":322.6120836564545,"net":170.69212516965771,"margin":0.09202926888923217,"irr":0.38859148621559136,"capIrr":1.2746946454048158,"pl":{"revTax":[1796.7293929099997,2030.0529515599997,2030.0529515599997],"revNoTax":[1695.027729160377,1915.1442939245278,1915.1442939245278],"taxAdd":[75.30554793669768,101.380736841061,101.380736841061],"cost":[1494.453032253736,1617.7041217709773,1636.6041217709774],"fin":[3.04507942734,3.04507942734,3.04507942734],"dep":[18.28613569321534,18.28613569321534,18.28613569321534],"profit":[171.1750302214395,265.2467352285957,246.3467352285956],"incomeTax":[42.793757555359875,66.31168380714892,61.5866838071489],"net":[128.3812726660796,198.93505142144676,184.7600514214467],"marginYear":[0.07573992475608207,0.10387470649210853,0.09647317541950587],"avg":{"revTax":1952.2784320099997,"revNoTax":1841.772105669811,"cost":1582.92042526523,"profit":227.58950022621025,"net":170.69212516965771,"marginYear":0.09202926888923217}},"cash":{"现金流入":[null,1796.7293929099997,2030.0529515599997,2400.725000752517],"现金流出":[200,1569.9482198159492,1645.1393437971274,1664.0393437971275],"初期投资（车辆、设备、土建、智慧环卫、开办费）":[87.57,0,0,0],"运行成本":[null,1518.843174852546,1642.0942643697874,1660.9942643697875],"税金及附加":[null,75.30554793669768,101.380736841061,101.380736841061],"所得税前净现金流量（1-2）":[-200,226.78117309405047,384.9136077628723,736.6856569553897],"所得税后净现金流量（3-5）":[-200,183.98741553869058,318.60192395572335,675.0989731482408],"所得税后累计净现金流量":[-200,-16.012584461309416,302.58933949441393,977.6883126426548]},"cashIrr":0.38859148621559136,"costItems":[{"k":"人工成本","v":1014.4946203034482},{"k":"工服劳保","v":10.5077},{"k":"人工消耗品","v":11.962799999999998},{"k":"直接材料费","v":128.41633688490265},{"k":"机械费用","v":102.1104},{"k":"机械费用-维修费","v":26.1},{"k":"机械费用-车险、年检","v":10.5},{"k":"机械费用-GPS服务","v":0.5},{"k":"动力费用","v":14.792},{"k":"动力费用-作业用电","v":6.4311},{"k":"取暖","v":0},{"k":"除臭消杀","v":1.7403},{"k":"租赁费","v":94.8},{"k":"其它","v":23.7605},{"k":"外包费用","v":10}],"costTotal":1456.1157571883507},{"no":3,"file":"方案三（保洁员按招标足额配置）.xlsx","name":"方案三 招标足额配置","revTax":2030.0529515599997,"life":3,"staff":193,"mgmt":8,"invest":460.5752122591843,"veh":74.09,"smart":0,"civil":0,"open":25.58,"working":360.9052122591843,"net":118.41255618958814,"margin":0.06182957418155489,"irr":0.2634712636470795,"capIrr":0.2997794330120087,"pl":{"revTax":[2030.0529515599997,2030.0529515599997,2030.0529515599997],"revNoTax":[1915.1442939245278,1915.1442939245278,1915.1442939245278],"taxAdd":[88.2522554251318,101.09469082336193,101.0946908233619],"cost":[1734.6507667408891,1705.680766740889,1725.6307667408892],"fin":[3.04507942734,3.04507942734,3.04507942734],"dep":[21.855457227138643,21.855457227138643,21.855457227138643],"profit":[146.13739173361023,173.7314165123712,153.78141651237115],"incomeTax":[36.53434793340256,43.4328541280928,38.44535412809279],"net":[109.60304380020767,130.2985623842784,115.33606238427836],"marginYear":[0.05722965321615966,0.0680358982859039,0.06022317104260111],"avg":{"revTax":2030.0529515599999,"revNoTax":1915.1442939245278,"cost":1721.9874334075557,"profit":157.8834082527842,"net":118.41255618958814,"marginYear":0.06182957418155489}},"cash":{"现金流入":[null,2030.0529515599997,2030.0529515599997,2393.3723304858504],"现金流出":[600,1764.7555536637942,1733.3713869971275,1753.3213869971275],"初期投资（车辆、设备、土建、智慧环卫、开办费）":[99.67,0,0,0],"运行成本":[null,1759.2963075697876,1730.3263075697876,1750.2763075697876],"税金及附加":[null,88.2522554251318,101.09469082336193,101.0946908233619],"所得税前净现金流量（1-2）":[-600,265.29739789620544,296.68156456287215,640.0509434887229],"所得税后净现金流量（3-5）":[-600,228.76304996280288,253.24871043477935,601.6055893606301],"所得税后累计净现金流量":[-600,-371.2369500371971,-117.98823960241776,483.61734975821236]},"cashIrr":0.2634712636470795,"costItems":[{"k":"人工成本","v":1096.5158635034484},{"k":"工服劳保","v":11.948700000000002},{"k":"人工消耗品","v":13.3166},{"k":"直接材料费","v":128.41633688490265},{"k":"机械费用","v":102.1104},{"k":"机械费用-维修费","v":27.296},{"k":"机械费用-车险、年检","v":10.5},{"k":"机械费用-GPS服务","v":0.5},{"k":"动力费用","v":14.792},{"k":"动力费用-作业用电","v":8.6511},{"k":"取暖","v":0},{"k":"除臭消杀","v":1.7403},{"k":"租赁费","v":94.8},{"k":"其它","v":23.7605},{"k":"外包费用","v":10}],"costTotal":1544.347800388351},{"no":4,"file":"方案四（实际运营一年）.xlsx","name":"方案四 实际运营一年","revTax":2030.0529515599997,"life":1,"staff":171,"mgmt":8,"invest":454.04526207354024,"veh":61.989999999999995,"smart":0,"civil":0,"open":25.58,"working":366.47526207354025,"net":163.59320529440902,"margin":0.08542082485031591,"irr":0.31366195082664494,"capIrr":0.1422472655773163,"pl":{"revTax":[2030.0529515599997,null,null],"revNoTax":[1915.1442939245278,null,null],"taxAdd":[90.0973810888486,null,null],"cost":[1668.0655671987058,null,null],"fin":[1.01502647578,null,null],"dep":[18.28613569321534,null,null],"profit":[218.12427372587868,null,null],"incomeTax":[54.53106843146967,null,null],"net":[163.59320529440902,null,null],"marginYear":[0.08542082485031591,null,null],"avg":{"revTax":2030.0529515599997,"revNoTax":1915.1442939245278,"cost":1668.0655671987058,"profit":218.12427372587868,"net":163.59320529440902,"marginYear":0.08542082485031591}},"cash":{"现金流入":[null,2433.1004850199706,null,null],"现金流出":[600,1693.4707362732959,null,null],"初期投资（车辆、设备、土建、智慧环卫、开办费）":[87.57,0,null,null],"运行成本":[null,1692.455709797516,null,null],"税金及附加":[null,90.0973810888486,null,null],"所得税前净现金流量（1-2）":[-600,739.6297487466747,null,null],"所得税后净现金流量（3-5）":[-600,685.0986803152051,null,null],"所得税后累计净现金流量":[-600,85.09868031520512,null,null]},"cashIrr":0.31366195082664494,"costItems":[{"k":"人工成本","v":1014.4946203034482},{"k":"工服劳保","v":10.5077},{"k":"人工消耗品","v":11.962799999999998},{"k":"直接材料费","v":128.41633688490265},{"k":"机械费用","v":102.1104},{"k":"机械费用-维修费","v":26.1},{"k":"机械费用-车险、年检","v":10.5},{"k":"机械费用-GPS服务","v":0.5},{"k":"动力费用","v":14.792},{"k":"动力费用-作业用电","v":6.4311},{"k":"取暖","v":0},{"k":"除臭消杀","v":1.7403},{"k":"租赁费","v":94.8},{"k":"其它","v":23.7605},{"k":"外包费用","v":10}],"costTotal":1456.1157571883507},{"no":5,"file":"方案五（实际运营两年）.xlsx","name":"方案五 实际运营两年","revTax":2030.0529515599997,"life":2,"staff":171,"mgmt":8,"invest":455.5134774127733,"veh":61.989999999999995,"smart":0,"civil":0,"open":25.58,"working":367.9434774127733,"net":181.73127437562692,"margin":0.09489168777106703,"irr":0.3905061304569245,"capIrr":0.3479173243045808,"pl":{"revTax":[2030.0529515599997,2030.0529515599997,null],"revNoTax":[1915.1442939245278,1915.1442939245278,null],"taxAdd":[90.0973810888486,101.380736841061,null],"cost":[1650.4469831279096,1634.0769831279094,null],"fin":[2.03005295156,2.03005295156,null],"dep":[18.28613569321534,18.28613569321534,null],"profit":[234.72783132089492,249.88890034744352,null],"incomeTax":[58.68195783022373,62.47222508686088,null],"net":[176.0458734906712,187.41667526058265,null],"marginYear":[0.09192303371038257,0.09786034183175149,null],"avg":{"revTax":2030.0529515599997,"revNoTax":1915.1442939245278,"cost":1642.2619831279094,"profit":242.30836583416922,"net":181.73127437562692,"marginYear":0.09489168777106703}},"cash":{"现金流入":[null,2030.0529515599997,2417.646731332655,null],"现金流出":[600,1678.2313453449462,1660.4971786782796,null],"初期投资（车辆、设备、土建、智慧环卫、开办费）":[87.57,0,0,null],"运行成本":[null,1674.8371257267197,1658.4671257267196,null],"税金及附加":[null,90.0973810888486,101.380736841061,null],"所得税前净现金流量（1-2）":[-600,351.8216062150534,757.1495526543752,null],"所得税后净现金流量（3-5）":[-600,293.1396483848297,694.6773275675142,null],"所得税后累计净现金流量":[-600,-306.8603516151703,387.8169759523439,null]},"cashIrr":0.3905061304569245,"costItems":[{"k":"人工成本","v":1014.4946203034482},{"k":"工服劳保","v":10.5077},{"k":"人工消耗品","v":11.962799999999998},{"k":"直接材料费","v":128.41633688490265},{"k":"机械费用","v":102.1104},{"k":"机械费用-维修费","v":26.1},{"k":"机械费用-车险、年检","v":10.5},{"k":"机械费用-GPS服务","v":0.5},{"k":"动力费用","v":14.792},{"k":"动力费用-作业用电","v":6.4311},{"k":"取暖","v":0},{"k":"除臭消杀","v":1.7403},{"k":"租赁费","v":94.8},{"k":"其它","v":23.7605},{"k":"外包费用","v":10}],"costTotal":1456.1157571883507}];
+const PLANS = [
+  {k:'方案一 实际运营配置',   tag:'',      rev:2030.05, net:187.27, margin:9.78, min:9.30, irr:42.12, invest:455.83, veh:61.99},
+  {k:'方案二 推迟进场（推荐）', tag:'推荐', rev:1952.28, net:170.69, margin:9.20, min:7.57, irr:38.86, invest:410.18, veh:61.99},
+  {k:'方案三 招标足额配置',   tag:'',      rev:2030.05, net:118.41, margin:6.18, min:5.72, irr:26.35, invest:460.58, veh:74.09},
+  {k:'方案四 实际运营一年',   tag:'',      rev:2030.05, net:163.59, margin:8.54, min:8.54, irr:31.37, invest:454.05, veh:61.99},
+  {k:'方案五 实际运营两年',   tag:'',      rev:2030.05, net:181.73, margin:9.49, min:9.19, irr:39.05, invest:455.51, veh:61.99}
+];
+const VEH_SUMMARY = [
+  {k:'环卫', a:337, c:346},
+  {k:'绿化', a:189, c:163},
+  {k:'合计', a:526, c:509}
+];
+const STAFF_SUMMARY = [
+  {k:'环卫', a:76, c:46},
+  {k:'绿化', a:387, c:276},
+  {k:'合计', a:463, c:344}
+];
+const RISKS = [
+  ['中','人员配置低于招标要求','招标总人数不低于 516 人，我司业务 463 人（环卫 76、绿化 387）；方案二配置 332 人（固定 181 含管理 10 + 绿化外包 151），少配 141 人（环卫 30、绿化 111），整体符合率 69.55%（环卫 60.53%、绿化 71.32%）。','履约与考核','按现配置测算月考核扣款约 24.7 万元；环卫少配 30 人易被“点人头”，存在履约扣款、通报及退场风险。若按招标足额配置（方案三），平均净利率降至 6.18%、首年 5.72%，跌破 6% 低效底线。','上会前确定补足路径：环卫以共享用工/劳务补充 30 人，绿化以季节性外包补齐 111 人；优先满足刚性考核岗位。合同前与甲方书面确认人员考核口径；同步保留方案三兜底测算，明确增人即增本的调价或成本承担机制。','运营中心、项目部','上会前定方案；进场前 30 日完成招聘/外包锁定','招标文件人员最低配置、投资评审报告、方案三测算'],
+  ['中','季度回款、10% 年终送审','招标文件明确每季度按应付总额的 90% 支付进度款，剩余 10% 待年度工作量完成送审后按审定金额一次付清，不符合集团按月回款要求。','回款与现金流','季度仅回款 90%，10% 尾款拖至年度送审后；首年需垫付流动资金 322.61 万元，现金回收慢于成本支出；若送审延迟，将加大垫资和坏账暴露。','投标澄清阶段取得甲方书面付款流程、送审时限及历史回款记录；合同谈判明确送审完成后付款天数、逾期违约责任；按季度 90% 回款重排现金流，建立 10% 尾款台账按月对账催收；回款条件无法改善时纳入投标决策。','财务部、投资发展部','合同审批前书面确认','招标文件付款条款、方案二现金流测算'],
+  ['低','分批进场与服务期缩短','招标合同条款约定“到期一项、移交一项、逐项衔接”，合同总价按各子项实际服务期据实调整；现测算按首日全量接管、三年均按 2,030.05 万元收入假设。','进场与收入','若分批进场，人员、车辆、管理团队按全量配置、成本全额发生，收入却按实际进场子项打折，首年可能出现负现金流；服务费及利润减少，回收期拉长。','向采购人书面确认各子项原合同到期日及“中标后原单位是否整体退出”；按实际进场日期重编首年收入曲线和资源投放；合同中约定延迟进场对应的收入、成本调整及补偿机制；按子项排定进场计划，避免全量资源提前到位。','投资发展部、运营中心','投标澄清及合同签订前','招标文件合同条款第（12）项、评审报告分批进场问询'],
+  ['低','人员与业务交接','若按招标节奏进场，上一轮作业单位需强制退场，涉及人员、车辆、工具、作业范围及考核台账交接；投资回复各业务板块不涉及人员、车辆接收。','交接与履约','交接不清可能导致进场首月作业断档、质量扣分和投诉；原有人员情绪及劳动关系处理不当，可能引发劳动纠纷；车辆设备状态不明会影响出车率。','编制进场交接清单（人员、车辆、工具、作业范围、考核台账、钥匙及账号）；提前踏勘并与甲方、原单位建立三方交接机制；关键岗位设置备份，首月加密巡查和考核自检；明确不接收人员的分流与安抚方案。','项目部、运营中心','进场前 2 周完成交接演练','运营评审意见人员接收与退场条款'],
+  ['低','人均作业面积偏大','测算道路总面积 841,482.91㎡（不含绿化带），作业面积 306,901.23㎡，保洁员 38 人；人均道路覆盖 22,144.29㎡、人均作业 8,076.35㎡；招标配置 61 人，人均覆盖 13,794.80㎡、作业 5,031.17㎡。','作业质量','人均道路覆盖较招标高约 60%，作业强度大；首月易因保洁频次不足产生质量扣分、投诉，甚至触发考核退场；为保考核增加突击加班，人工成本上行。','按路段、工种测算实际工时和作业频次，配置机动保洁与突击队；以快保车、机械化作业替代高频人工；首月试运行校准频次和班次；将考核指标分解到班组，月度复盘并动态调整。','运营中心、项目部','进场首月校准，运营期按月复盘','评审报告人均面积测算、招标 61 名保洁员配置'],
+  ['低','绿化劳务单价偏低','绿化劳务外包 151 人，外包单价偏低；绿化属季节性用工，甲方按季节考核人数，最低工资、社保及缺工价格存在上行可能。','成本与分包','人工单价或最低工资上调将直接压缩绿化毛利；季节性缺工可能造成作业质量波动；低价分包若再压价，易引发履约不足和劳资纠纷。','分包合同设置最低工资联动、社保合规和不得低于成本价的约束；建立季节性用工池和跨项目调剂；按季度复核外包结算与到岗率；出现价格上行时启动调价或替换分包商机制。','供应链管理部、运营中心','分包合同签订前锁定，运营期季度复核','评审报告绿化外包及运营评审意见']
+];
+const CONCL = {
+  head:'如中标，按评审意见落实后履行合同审批、开展投资运营。',
+  items:[
+    '人员配置按招标要求补足，重点解决环卫少配 30 人、绿化少配 111 人问题；',
+    '落实季度回款与 10% 年终送审价款的回款保障机制；',
+    '向采购人书面确认各子项到期时间与进场安排，据实编制首年收入曲线；',
+    '复核报价下浮合理性，避免以过低报价换取中标；',
+    '按招标要求配置车辆设备，租赁车辆须满足规格与数量；',
+    '合同条款、考核扣款及劳务用工按法务与运营意见落实。'
+  ]
+};
+
+/* ============ 渲染 ============ */
+const $=id=>document.getElementById(id);
+function money(n){return n.toLocaleString('zh-CN',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function diffTag(v){const n=Number(v);const cls=n<0?'neg':(n>0?'pos':'zero');const s=n>0?'+'+n:''+n;return '<span class="tag-diff '+cls+'">'+s+'</span>';}
+function pct(n){return Number(n).toFixed(2)+'%';}
+function rateTag(v,good,low){return '<span class="tag '+(v>=good?'ok':(v>=low?'warn':'bad'))+'">'+pct(v)+'</span>';}
+
+function benchHTML(){
+  return `<div class="card"><div class="card-header"><h3>收益率对标：与集团标准的关系</h3><span class="badge">集团要求 8% · 低效底线 6%</span></div><div class="card-body">
+    <div class="bench-legend"><span style="left:0">0%</span><span style="left:60%">低效底线 6%</span><span style="left:80%">集团要求 8%</span><span style="right:0">100%</span></div>
+    <div class="bench"><div class="bt">平均净利润率 9.20%（方案二）</div><div class="bar">
+      <div class="fill" style="width:92%;background:#0d9488"></div>
+    </div></div>
+    <div class="bench"><div class="bt">最低净利润率（首年）7.57%</div><div class="bar">
+      <div class="fill" style="width:75.7%;background:#f59e0b"></div>
+    </div></div>
+    <p class="sec-note">方案二平均净利率 9.20%、首年 7.57%，均高于集团 8% 一般要求与 6% 低效底线；方案三按招标足额配置人员后降至 6.18%，首年 5.72% 跌破 6% 底线。</p>
+  </div></div>`;
+}
+function keyElementsHTML(){
+  const items = [
+    ['环卫保洁','84.15',' 万㎡','东部园区 15 条道路 + 1 座 10 吨中转站；限价 512.80 万元/年'],
+    ['园林绿化','约 295',' 万㎡','东西部道路绿化 248.12 万㎡、翠湖公园 48.9 万㎡、五松渠湿地 9.1 万㎡；限价 1,972.89 万元/年'],
+    ['行道树 / 公厕','25,521 株 / 4 座','','翠湖公园步道 10.15 万㎡、停车场 2 个'],
+    ['人员配置','332',' 人','固定 181 人（含管理 10）＋绿化劳务外包 151 人；招标要求 463 人，少配 141 人'],
+    ['车辆设备','509 / 526',' 部','招标最低 526 部（不含修枝剪 1,072 部工具）；少配 17 部'],
+    ['服务期','1 年一签','最多 3 年','年度考核平均分不低于 80 分方可续签'],
+    ['回款方式','季度 90%','+ 年终 10%','季度考核付费，余款年度送审后付清'],
+    ['履约保证金','2.5%','合同价','投标保证金无']
+  ];
+  return `<div class="card"><div class="card-header"><h3>项目关键要素速览</h3></div><div class="card-body"><div class="grid g4">
+    ${items.map(it=>`<div><div style="font-size:12.5px;color:var(--text-secondary)">${it[0]}</div><b style="font-size:19px;color:var(--primary-dark);display:block;margin:3px 0 2px">${it[1]}<span style="font-size:12px;font-weight:600">${it[2]}</span></b><div style="font-size:12px;color:var(--text-secondary);line-height:1.6">${it[3]}</div></div>`).join('')}
+  </div></div></div>`;
+}
+function renderDashboard(){
+  $('page-dashboard').innerHTML = `
+  <div class="doc-meta" style="margin-bottom:14px">五方案测算摘要：平均净利率方案一（实际运营配置）9.78%、方案二（环卫 2027-07-01 进场）9.20%、方案三（招标保洁员足额配置）6.18%、方案四（实际运营一年）8.54%、方案五（实际运营两年）9.49%；方案二全投资 IRR 38.86%、初期投资 410.18 万元。推荐方案二（环卫 2027-07-01 进场）。</div>
+  <div class="kpi-grid k4">
+    <div class="kpi"><div class="label">年服务费（含税 · 方案二平均）</div><div class="value">1,952.28<span class="unit">万元/年</span></div><div class="note">2028/2029 满年 2,030.05 · 首年 1,796.73（环卫 7/1 进场）</div></div>
+    <div class="kpi ok"><div class="label">平均净利润率</div><div class="value">9.20<span class="unit">%</span></div><div class="note">高于集团 8% 要求 <span class="pill ok">达标</span></div></div>
+    <div class="kpi"><div class="label">年净利润（平均）</div><div class="value">170.69<span class="unit">万元/年</span></div><div class="note">首年 128.38 · 2028 198.94 · 2029 184.76</div></div>
+    <div class="kpi"><div class="label">静态回收期</div><div class="value">2.40<span class="unit">年</span></div><div class="note">初期投资 410.18 ÷ 年均净利 170.69</div></div>
+    <div class="kpi"><div class="label">初期总投资</div><div class="value">410.18<span class="unit">万元</span></div><div class="note">车辆设备 61.99 + 开办 25.58 + 流动资金 322.61；占年服务费 20.2%</div></div>
+    <div class="kpi warn"><div class="label">人员配置</div><div class="value">332<span class="unit">人</span></div><div class="note">招标 463 人，少配 141 人 <span class="pill warn">含外包 151</span></div></div>
+    <div class="kpi warn"><div class="label">车辆配置</div><div class="value">509 / 526<span class="unit">部</span></div><div class="note">少配 17 部；方案三 527 部（多 1 部）</div></div>
+    <div class="kpi danger"><div class="label">风险项</div><div class="value">6<span class="unit">项</span></div><div class="note">中风险 2 项、低风险 4 项 <span class="pill bad">待上会决策</span></div></div>
+  </div>
+  <div style="margin-top:18px">${benchHTML()}</div>
+  <div class="chart-row">
+    <div class="chart-box"><h4>人员配置：招标 vs 测算（方案二 · 人）</h4><div class="cv"><canvas id="chNet"></canvas></div><p class="sec-note">招标要求 463 人；方案二一线作业 322 人（固定 171 + 外包 151），另有管理 10 人、合计 332 人，较招标少配 141 人（一线口径）。</p></div>
+    <div class="chart-box"><h4>车辆配置：招标 vs 测算（方案二 · 部）</h4><div class="cv"><canvas id="chVeh"></canvas></div><p class="sec-note">环卫 337→346（多 9 部）、绿化 189→163（少 26 部），合计 526→509（少 17 部）。</p></div>
+  </div>
+  <div class="chart-row">
+    <div class="chart-box"><h4>五口径净利润率对比（%）</h4><div class="cv"><canvas id="chMargin5"></canvas></div><p class="sec-note">五个方案的平均 / 最低（首年）净利率对比；方案三首年 5.72% 低于 6% 低效底线。</p></div>
+    <div class="chart-box"><h4>初期总投资构成（方案二 · 410.18 万元）</h4><div class="cv"><canvas id="chInvest"></canvas></div><p class="sec-note">新购车辆设备 61.99 万元，占年服务费 3.05%，低于 30% 红线。</p></div>
+  </div>
+  ${keyElementsHTML()}`;
+}
+var FIN_TABS=[['years','三年收益与利润表'],['cost','成本结构及科目占比'],['cash','现金流与投资回收'],['invest','初期总投资构成']];
+var FIN_TAB='years';
+var FIN_PLAN={years:2,cost:2,cash:2,invest:2};
+var FIN_NAMES=['方案一 实际运营配置','方案二 推迟进场（推荐）','方案三 招标足额配置','方案四 实际运营一年','方案五 实际运营两年'];
+
+function finNum(v,d){ return (v==null||isNaN(v))?'—':Number(v).toFixed(d==null?2:d); }
+function finMoney(v){ return (v==null||isNaN(v))?'—':money(v); }
+function finPct(v){ return (v==null||isNaN(v))?'—':(Number(v)*100).toFixed(2)+'%'; }
+
+function finPlanBar(tab){
+  var cur=FIN_PLAN[tab];
+  return '<div class="sub-tabs">'+FIN_NAMES.map((n,i)=>`<button class="sub-tab ${cur===i+1?'active':''}" onclick="switchFinPlan('${tab}',${i+1},this)">方案${['一','二','三','四','五'][i]}</button>`).join('')+
+    (tab!=='adjust'?`<button class="sub-tab ${cur===6?'active':''}" onclick="switchFinPlan('${tab}',6,this)">五方案对比</button>`:'')+'</div>';
+}
+
+function finYearsHTML(sel){
+  if(sel===6){
+    return finPlanBar('years')+`<div class="card"><div class="card-header"><h3>五方案收益指标对比</h3><span class="badge">单位：万元 / %</span></div><div class="card-body no-padding"><div class="tbl-scroll"><table>
+      <thead><tr><th class="l">方案</th><th>收入（含税）</th><th>平均净利润</th><th>平均净利率</th><th>首年净利率</th><th>IRR（税后）</th><th>初期投资</th></tr></thead><tbody>
+      ${FIN5.map(p=>`<tr${p.no===2?' class="highlight"':''}><td class="l">${p.name}</td><td>${finMoney(p.pl.avg.revTax)}</td><td>${finMoney(p.net)}</td><td>${finPct(p.margin)}</td><td class="${p.pl.marginYear[0]<0.06?'neg':''}">${finPct(p.pl.marginYear[0])}</td><td>${finPct(p.irr)}</td><td>${finMoney(p.invest)}</td></tr>`).join('')}
+      </tbody></table></div><div class="table-note">数据取自五个方案工作簿「项目投资数据一览表」及「投资测算表」，按各方案实际进场时点与运营年限计算。</div></div></div>`;
+  }
+  var p=FIN5[sel-1];
+  var rows=[['业务收入（含税）',p.pl.revTax,p.pl.avg.revTax],['业务收入（不含税）',p.pl.revNoTax,p.pl.avg.revNoTax],['税金及附加',p.pl.taxAdd,null],['主营业务成本',p.pl.cost,p.pl.avg.cost],['财务费用',p.pl.fin,null],['折旧',p.pl.dep,null],['利润总额',p.pl.profit,p.pl.avg.profit],['所得税',p.pl.incomeTax,null],['净利润',p.pl.net,p.pl.avg.net],['净利润率（%）',p.pl.marginYear.map(v=>v*100),p.pl.avg.marginYear*100]];
+  return finPlanBar('years')+`<div class="doc-meta" style="margin-bottom:10px">${p.name} · 年服务费（含税）${finMoney(p.revTax)} 万元 · 服务期 ${p.life} 年 · 初期投资 ${finMoney(p.invest)} 万元</div>
+  <div class="card"><div class="card-header"><h3>${p.name} 三年收益与利润表</h3><span class="badge">单位：万元</span></div><div class="card-body no-padding"><div class="tbl-scroll"><table>
+    <thead><tr><th class="l">指标</th><th class="n">2027（首年）</th><th class="n">2028</th><th class="n">2029</th><th class="n">三年平均</th></tr></thead><tbody>
+    ${rows.map(r=>`<tr><td class="l">${r[0]}</td>${[0,1,2].map(k=>`<td class="n">${r[1][k]==null?'—':(r[0].indexOf('%')>=0?Number(r[1][k]).toFixed(2):finMoney(r[1][k]))}</td>`).join('')}<td class="n">${r[2]==null?'—':(r[0].indexOf('%')>=0?Number(r[2]).toFixed(2):finMoney(r[2]))}</td></tr>`).join('')}
+    </tbody></table></div><div class="table-note">净利润 = 利润总额 × 75%；首年净利率 ${finPct(p.pl.marginYear[0])}，三年平均 ${finPct(p.pl.avg.marginYear)}；全投资 IRR ${finPct(p.irr)}。</div></div></div>`;
+}
+
+function finCostHTML(sel){
+  if(sel===6){
+    return finPlanBar('cost')+`<div class="card"><div class="card-header"><h3>五方案年直接运行成本对比</h3><span class="badge">单位：万元/年</span></div><div class="card-body no-padding"><div class="tbl-scroll"><table>
+      <thead><tr><th class="l">方案</th><th>直接运行成本</th><th>占含税收入</th><th>人工成本占比</th></tr></thead><tbody>
+      ${FIN5.map(p=>{var labor=(p.costItems.find(x=>x.k==='人工成本')||{}).v||0;return `<tr><td class="l">${p.name}</td><td>${finMoney(p.costTotal)}</td><td>${(p.costTotal/p.revTax*100).toFixed(2)}%</td><td>${(labor/p.costTotal*100).toFixed(2)}%</td></tr>`;}).join('')}
+      </tbody></table></div></div></div>`;
+  }
+  var p=FIN5[sel-1];
+  return finPlanBar('cost')+`<div class="card"><div class="card-header"><h3>${p.name} 年直接运行成本结构</h3><span class="badge">单位：万元/年</span></div><div class="card-body no-padding"><div class="tbl-scroll"><table>
+    <thead><tr><th class="l">成本项</th><th class="n">金额</th><th class="n">占直接成本</th></tr></thead><tbody>
+    ${p.costItems.map(x=>`<tr><td class="l">${x.k}</td><td class="n">${finMoney(x.v)}</td><td class="n">${p.costTotal?(x.v/p.costTotal*100).toFixed(2):'—'}%</td></tr>`).join('')}
+    </tbody></table></div><div class="table-note">直接运行成本合计 ${finMoney(p.costTotal)} 万元/年，占含税收入 ${(p.costTotal/p.revTax*100).toFixed(2)}%。</div></div></div>`;
+}
+
+function finCashHTML(sel){
+  if(sel===6){
+    return finPlanBar('cash')+`<div class="card"><div class="card-header"><h3>五方案现金流与 IRR</h3><span class="badge">项目全投资</span></div><div class="card-body no-padding"><div class="tbl-scroll"><table>
+      <thead><tr><th class="l">方案</th><th>初期现金流出</th><th>首年税后净现金流</th><th>第三年税后净现金流</th><th>税后 IRR</th></tr></thead><tbody>
+      ${FIN5.map(p=>{var c=p.cash;var n=(c['所得税后净现金流量（3-5）']||[]);if(n.length===4)n=n.slice(1);return `<tr><td class="l">${p.name}</td><td>${finMoney(p.invest)}</td><td>${finMoney(n[0])}</td><td>${finMoney(n[2])}</td><td>${finPct(p.cashIrr)}</td></tr>`;}).join('')}
+      </tbody></table></div></div></div>`;
+  }
+  var p=FIN5[sel-1], c=p.cash;
+  function vals(l){var v=c[l]||[];return v.length===4?v.slice(1):v;}
+  var labs=['现金流入','现金流出','运行成本','税金及附加','所得税后净现金流量（3-5）','所得税后累计净现金流量'];
+  return finPlanBar('cash')+`<div class="card"><div class="card-header"><h3>${p.name} 项目全投资现金流</h3><span class="badge">单位：万元</span></div><div class="card-body no-padding"><div class="tbl-scroll"><table>
+    <thead><tr><th class="l">项目</th><th class="n">2027</th><th class="n">2028</th><th class="n">2029</th></tr></thead><tbody>
+    ${labs.map(l=>{var v=vals(l);return `<tr><td class="l">${l}</td>${[0,1,2].map(k=>`<td class="n">${finMoney(v[k])}</td>`).join('')}</tr>`;}).join('')}
+    </tbody></table></div><div class="table-note">初期投资 ${finMoney(p.invest)} 万元（车辆设备 ${finMoney(p.veh)} + 开办费 ${finMoney(p.open)} + 流动资金 ${finMoney(p.working)}）；税后 IRR ${finPct(p.cashIrr)}，静态回收期约 ${(p.invest/p.net).toFixed(2)} 年。</div></div></div>`;
+}
+
+function finInvestHTML(sel){
+  if(sel===6){
+    return finPlanBar('invest')+`<div class="card"><div class="card-header"><h3>五方案初期投资对比</h3><span class="badge">单位：万元</span></div><div class="card-body no-padding"><div class="tbl-scroll"><table>
+      <thead><tr><th class="l">方案</th><th>车辆设备</th><th>开办费</th><th>流动资金</th><th>合计</th><th>占年服务费</th></tr></thead><tbody>
+      ${FIN5.map(p=>`<tr><td class="l">${p.name}</td><td>${finMoney(p.veh)}</td><td>${finMoney(p.open)}</td><td>${finMoney(p.working)}</td><td>${finMoney(p.invest)}</td><td>${(p.invest/p.revTax*100).toFixed(2)}%</td></tr>`).join('')}
+      </tbody></table></div></div></div>`;
+  }
+  var p=FIN5[sel-1];
+  return finPlanBar('invest')+`<div class="card"><div class="card-header"><h3>${p.name} 初期总投资构成</h3><span class="badge">合计 ${finMoney(p.invest)} 万元</span></div><div class="card-body no-padding"><div class="tbl-scroll"><table>
+    <thead><tr><th class="l">项目</th><th class="n">金额（万元）</th><th class="n">占总投资</th></tr></thead><tbody>
+    ${[['新购及收购车辆设备',p.veh],['智慧环卫',p.smart],['土建',p.civil],['前期开办费',p.open],['流动资金',p.working]].map(r=>`<tr><td class="l">${r[0]}</td><td class="n">${finMoney(r[1])}</td><td class="n">${(r[1]/p.invest*100).toFixed(2)}%</td></tr>`).join('')}
+    <tr class="total"><td class="l">合计</td><td class="n">${finMoney(p.invest)}</td><td class="n">100.00%</td></tr>
+    </tbody></table></div><div class="table-note">车辆设备 ${finMoney(p.veh)} 万元，占年服务费 ${(p.veh/p.revTax*100).toFixed(2)}%，低于集团 30% 红线。</div></div></div>`;
+}
+
+function finAdjustHTML(){
+  var a=FIN5[0],b=FIN5[1];
+  return `<div class="card"><div class="card-header"><h3>评审前后调整对照</h3><span class="badge">方案一 → 方案二（推荐）</span></div><div class="card-body no-padding"><div class="tbl-scroll"><table>
+    <thead><tr><th class="l">指标</th><th>评审前（方案一 实际运营配置）</th><th>评审后（方案二 推迟进场）</th><th>差异</th></tr></thead><tbody>
+    <tr><td class="l">年服务费（含税 · 三年平均）</td><td>${finMoney(a.pl.avg.revTax)}</td><td>${finMoney(b.pl.avg.revTax)}</td><td>${finMoney(b.pl.avg.revTax-a.pl.avg.revTax)}</td></tr>
+    <tr><td class="l">平均净利润</td><td>${finMoney(a.net)}</td><td>${finMoney(b.net)}</td><td>${finMoney(b.net-a.net)}</td></tr>
+    <tr><td class="l">平均净利率</td><td>${finPct(a.margin)}</td><td>${finPct(b.margin)}</td><td>${((b.margin-a.margin)*100).toFixed(2)} 个百分点</td></tr>
+    <tr><td class="l">首年净利率</td><td>${finPct(a.pl.marginYear[0])}</td><td>${finPct(b.pl.marginYear[0])}</td><td>${((b.pl.marginYear[0]-a.pl.marginYear[0])*100).toFixed(2)} 个百分点</td></tr>
+    <tr><td class="l">全投资 IRR（税后）</td><td>${finPct(a.irr)}</td><td>${finPct(b.irr)}</td><td>${((b.irr-a.irr)*100).toFixed(2)} 个百分点</td></tr>
+    <tr><td class="l">初期总投资</td><td>${finMoney(a.invest)}</td><td>${finMoney(b.invest)}</td><td>${finMoney(b.invest-a.invest)}</td></tr>
+    </tbody></table></div><div class="table-note">评审将环卫进场推迟至 2027-07-01，首年收入与净利率下降，但初期投资减少 ${finMoney(a.invest-b.invest)} 万元；方案二仍满足集团 8% 平均净利率要求，首年 7.57% 高于 6% 低效底线。</div></div></div>`;
+}
+
+function finChartHTML(tab,sel){
+  var yearsTitle=sel===6?'五方案平均净利润与平均净利率':'三年收入、成本与净利润';
+  var yearsNote=sel===6?'柱：各方案平均净利润；线：平均净利润率（右轴）。橙色虚线为集团要求 8%，灰色虚线为低效底线 6%。':'柱：各年不含税收入、主营业务成本与净利润；线：净利率（右轴）。橙色虚线为集团要求 8%，灰色虚线为低效底线 6%。';
+  var cashTitle=sel===6?'五方案现金流与投资回收对比':'年度净现金流与累计回款';
+  var cashNote=sel===6?'柱：第3年末累计净现金流；线：全投资IRR（右轴）。':'柱：所得税后年度净现金流；线：累计净现金流（右轴）。';
+  var cfg={
+    years:[yearsTitle,yearsNote,'260px'],
+    cost:['直接运行成本构成','按成本科目从高到低排序，人工成本为第一大项。','300px'],
+    cash:[cashTitle,cashNote,'260px'],
+    invest:['初期总投资构成','车辆设备、前期开办费与流动资金占比；流动资金用于首年垫资及季度回款缺口。','260px'],
+    adjust:['评审前后净利率变化','方案一实际运营配置与方案二推迟进场的平均、首年净利率对比。','260px']
+  }[tab];
+  if(!cfg) return '';
+  var unitAttr=tab==='invest'||tab==='cash'?' data-unit="万元"':(tab==='adjust'?' data-unit="%"':'');
+  return `<div class="chart-box" style="margin-bottom:16px"><h4>${cfg[0]}</h4><div class="cv" style="height:${cfg[2]}"><canvas id="finChart-${tab}"${unitAttr}></canvas></div><p class="sec-note">${cfg[1]}</p></div>`;
+}
+function drawFinChart(tab,sel){
+  var el=document.getElementById('finChart-'+tab); if(!el||typeof Chart==='undefined')return;
+  var colors=['#0891b2','#0ea5e9','#f59e0b','#14b8a6','#94a3b8','#4f6ef7','#dc2626'];
+  if(tab==='years'){
+    var labels,datasets,yTitle,marginName;
+    if(sel===6){
+      labels=FIN5.map((x,i)=>'方案'+['一','二','三','四','五'][i]);
+      datasets=[
+        {type:'bar',label:'平均净利润（万元）',data:FIN5.map(x=>+x.net.toFixed(2)),backgroundColor:'#0891b2',borderRadius:6,yAxisID:'y'},
+        {type:'bar',label:'成本及费用（万元）',data:[],hidden:true,yAxisID:'y'},
+        {type:'line',label:'平均净利润率（%）',data:FIN5.map(x=>+(x.margin*100).toFixed(2)),borderColor:'#dc2626',backgroundColor:'#dc2626',tension:.25,pointRadius:4,borderWidth:2.5,yAxisID:'y1'}
+      ];
+      yTitle='平均净利润（万元）';marginName='平均净利润率（%）';
+    }else{
+      var p=FIN5[sel-1];
+      labels=['2027（首年）','2028','2029'];
+      var rev=p.pl.revNoTax.map(v=>v==null?null:+v.toFixed(2));
+      var cost=p.pl.cost.map(v=>v==null?null:+v.toFixed(2));
+      var net=p.pl.net.map(v=>v==null?null:+v.toFixed(2));
+      datasets=[
+        {type:'bar',label:'业务收入（不含税）',data:rev,backgroundColor:'#4f6ef7',borderRadius:5,yAxisID:'y'},
+        {type:'bar',label:'主营业务成本',data:cost,backgroundColor:'#94a3b8',borderRadius:5,yAxisID:'y'},
+        {type:'bar',label:'净利润（万元）',data:net,backgroundColor:'#0891b2',borderRadius:5,yAxisID:'y'},
+        {type:'line',label:'净利率（%）',data:p.pl.marginYear.map(v=>v==null?null:+(v*100).toFixed(2)),borderColor:'#dc2626',backgroundColor:'#dc2626',tension:.25,pointRadius:4,borderWidth:2.5,yAxisID:'y1'}
+      ];
+      yTitle='金额（万元）';marginName='净利率（%）';
+    }
+    datasets=datasets.concat([
+      {type:'line',label:'集团要求 8%',data:labels.map(()=>8),borderColor:'#f59e0b',borderDash:[6,4],pointRadius:0,borderWidth:2,yAxisID:'y1'},
+      {type:'line',label:'低效底线 6%',data:labels.map(()=>6),borderColor:'#64748b',borderDash:[4,4],pointRadius:0,borderWidth:2,yAxisID:'y1'}
+    ]);
+    new Chart(el,{data:{labels:labels,datasets:datasets},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11},filter:item=>item.text!=='成本及费用（万元）'}},tooltip:{callbacks:{label:c=>' '+c.dataset.label+'：'+(c.dataset.yAxisID==='y1'?c.parsed.y.toFixed(2)+'%':money(c.parsed.y)+' 万元')}}},scales:{y:{beginAtZero:true,grid:GRID,title:{display:true,text:yTitle}},y1:{position:'right',grid:{display:false},ticks:{callback:v=>v+'%'},title:{display:true,text:marginName}},x:{grid:{display:false}}}}});
+  }
+  if(tab==='cost'){
+    if(sel===6) hbar('finChart-cost',FIN5.map((x,i)=>'方案'+['一','二','三','四','五'][i]),FIN5.map(x=>+x.costTotal.toFixed(2)),colors.slice(0,5),'万元');
+    else{var pc=FIN5[sel-1];var items=pc.costItems.slice().sort((a,b)=>b.v-a.v);hbar('finChart-cost',items.map(x=>x.k),items.map(x=>+x.v.toFixed(2)),items.map((x,i)=>colors[i%colors.length]),'万元');}
+  }
+  if(tab==='cash'){
+    if(sel===6){
+      var cum3=FIN5.map(x=>{var c=(x.cash['所得税后累计净现金流量']||[]).filter(v=>v!=null);return c.length?+c[c.length-1].toFixed(2):null;});
+      new Chart(el,{data:{labels:FIN5.map((x,i)=>'方案'+['一','二','三','四','五'][i]),datasets:[
+        {type:'bar',label:'第3年末累计净现金流（万元）',data:cum3,backgroundColor:'#0891b2',borderRadius:6,yAxisID:'y'},
+        {type:'line',label:'全投资 IRR（%）',data:FIN5.map(x=>+(x.irr*100).toFixed(2)),borderColor:'#dc2626',tension:.2,pointRadius:4,borderWidth:2.4,yAxisID:'y1'}
+      ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}}},scales:{y:{grid:GRID,title:{display:true,text:'累计净现金流（万元）'}},y1:{position:'right',grid:{display:false},ticks:{callback:v=>v+'%'},title:{display:true,text:'IRR（%）'}},x:{grid:{display:false}}}}});
+    }else{
+      var pcash=FIN5[sel-1],c=pcash.cash;
+      var nn=(c['所得税后净现金流量（3-5）']||[]);if(nn.length===4)nn=nn.slice(1);
+      var cc=(c['所得税后累计净现金流量']||[]);if(cc.length===4)cc=cc.slice(1);
+      new Chart(el,{data:{labels:['2027','2028','2029'],datasets:[
+        {type:'bar',label:'年度净现金流（万元）',data:nn.map(v=>v==null?null:+v.toFixed(2)),backgroundColor:'#0891b2',borderRadius:6,yAxisID:'y'},
+        {type:'line',label:'累计净现金流（万元）',data:cc.map(v=>v==null?null:+v.toFixed(2)),borderColor:'#0ea5e9',tension:.2,pointRadius:4,borderWidth:2.4,yAxisID:'y1'}
+      ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}}},scales:{y:{grid:GRID,title:{display:true,text:'年度净现金流（万元）'}},y1:{position:'right',grid:{display:false},title:{display:true,text:'累计净现金流（万元）'}},x:{grid:{display:false}}}}});
+    }
+  }
+  if(tab==='invest'){
+    if(sel===6) hbar('finChart-invest',FIN5.map((x,i)=>'方案'+['一','二','三','四','五'][i]),FIN5.map(x=>+x.invest.toFixed(2)),colors.slice(0,5),'万元');
+    else{var pi=FIN5[sel-1];doughnut('finChart-invest',['车辆设备','前期开办费','流动资金'],[+pi.veh.toFixed(2),+pi.open.toFixed(2),+pi.working.toFixed(2)],['#0891b2','#f59e0b','#14b8a6'],'万元');}
+  }
+  if(tab==='adjust'){
+    var a=FIN5[0],b=FIN5[1];
+    new Chart(el,{type:'bar',data:{labels:['平均净利率','首年净利率'],datasets:[
+      {label:'方案一 实际运营配置',data:[+(a.margin*100).toFixed(2),+(a.pl.marginYear[0]*100).toFixed(2)],backgroundColor:'#94a3b8',borderRadius:6},
+      {label:'方案二 推迟进场（推荐）',data:[+(b.margin*100).toFixed(2),+(b.pl.marginYear[0]*100).toFixed(2)],backgroundColor:'#0891b2',borderRadius:6}
+    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}},tooltip:{callbacks:{label:c=>' '+c.dataset.label+'：'+c.parsed.y.toFixed(2)+'%'}}},scales:{y:{beginAtZero:true,grid:GRID,ticks:{callback:v=>v+'%'},title:{display:true,text:'净利率（%）'}},x:{grid:{display:false}}}}});
+  }
+}
+function finBodyHTML(tab,sel){
+  var chart=finChartHTML(tab,sel);
+  if(tab==='years')return chart+finYearsHTML(sel);
+  if(tab==='cost')return chart+finCostHTML(sel);
+  if(tab==='cash')return chart+finCashHTML(sel);
+  if(tab==='invest')return chart+finInvestHTML(sel);
+  return chart+finAdjustHTML();
+}
+
+function renderFinance(){
+  $('page-finance').innerHTML=`
+  <div class="doc-meta" style="margin-bottom:14px">口径：数据取自五个方案工作簿（项目投资数据一览表 / 投资测算表 / 直接运行成本表）；收入含税，利润表为不含税口径，金额单位万元。推荐方案二（环卫 2027-07-01 进场）。</div>
+  <div class="tabs" id="finTabs">${FIN_TABS.map((t,i)=>`<button class="tab ${i===0?'active':''}" onclick="switchFinTab('${t[0]}',this)">${t[1]}</button>`).join('')}</div>
+  ${FIN_TABS.map((t,i)=>`<div class="tab-panel ${i===0?'active':''}" id="finPanel-${t[0]}"><div id="finBody-${t[0]}">${i===0?finBodyHTML(t[0],FIN_PLAN[t[0]]):''}</div></div>`).join('')}`;
+  FIN_TAB='years';
+  setTimeout(function(){drawFinChart('years',FIN_PLAN.years);},40);
+}
+
+function switchFinTab(key,btn){
+  document.querySelectorAll('#finTabs .tab').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  $('page-finance').querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  var panel=$('finPanel-'+key); if(panel) panel.classList.add('active');
+  FIN_TAB=key;
+  var body=$('finBody-'+key); if(body) body.innerHTML=finBodyHTML(key,FIN_PLAN[key]||2);
+  setTimeout(function(){drawFinChart(key,FIN_PLAN[key]||2);},40);
+}
+
+function switchFinPlan(tab,idx,btn){
+  FIN_PLAN[tab]=idx;
+  var body=$('finBody-'+tab); if(body) body.innerHTML=finBodyHTML(tab,idx);
+  setTimeout(function(){drawFinChart(tab,idx);},40);
+}
+
+const STAFF_DETAIL = [
+  ['环卫业务','清扫保洁负责人',1,1,1],
+  ['','保洁员',61,38,60],
+  ['','洗扫车司机',2,2,2],
+  ['','多功能洒水车司机',2,2,2],
+  ['','电动三轮挂桶车司机',3,2,2],
+  ['','中型垃圾压缩收集车司机',1,0,0],
+  ['','压缩收集车跟车工',1,0,0],
+  ['','勾臂车司机',1,0,0],
+  ['','中转站操作工',2,1,1],
+  ['','小型卡车司机',1,0,0],
+  ['','小型铲车司机',1,0,0],
+  ['','小计',76,46,68,true],
+  ['绿化业务','绿化负责人',1,5,5],
+  ['','绿化技术负责人',2,10,10],
+  ['','绿化园艺护工',70,71,71],
+  ['','绿化养护工',226,151,151],
+  ['','洒水车司机',6,3,3],
+  ['','农用自卸车司机',5,4,4],
+  ['','高空作业车司机',3,2,2],
+  ['','保洁员',17,15,15],
+  ['','保安',12,8,8],
+  ['','保安队长',0,4,4],
+  ['','志愿者管理员',1,0,0],
+  ['','小型压缩收集车司机',1,1,1],
+  ['','吸污车司机',1,0,0],
+  ['','公厕保洁员',4,2,2],
+  ['','绿化工',38,0,0],
+  ['','小计',387,276,276,true],
+  ['合计','—',463,322,344,true]
+];
+function staffDetailTable(plan3){
+  var col=plan3?4:3;
+  function diff(g,n){var d=n-g;var cls=d<0?'neg':(d>0?'pos':'');return `<td class="${cls}">${d>0?'+':''}${d}</td>`;}
+  var body=STAFF_DETAIL.map(function(r){
+    var g=r[2],n=r[col],sum=!!r[5];
+    if(r[0]==='合计') return `<tr class="total"><td class="l" colspan="2">合计</td><td>${g}</td><td>${n}</td>${diff(g,n)}</tr>`;
+    var first=`<td class="l">${r[0]}</td>`;
+    var rest=`<td class="l">${r[1]}</td><td>${g}</td><td>${n}</td>${diff(g,n)}`;
+    return `<tr${sum?' class="total"':''}>${first}${rest}</tr>`;
+  }).join('');
+  return `<div class="tbl-scroll"><table><thead><tr><th class="l">服务范围</th><th class="l">岗位</th><th>招标</th><th>测算</th><th>差值</th></tr></thead><tbody>${body}</tbody></table></div>`;
+}
+function staffTable(){
+  return `<div class="tbl-scroll"><table><thead><tr><th class="l">板块 / 岗位</th><th>招标要求</th><th>方案一二四五</th><th>差值</th><th>方案三</th></tr></thead><tbody>
+    <tr><td class="l">环卫作业</td><td>76</td><td>46</td><td class="neg">-30</td><td>保洁员按招标 61 人配置</td></tr>
+    <tr><td class="l">园林绿化</td><td>387</td><td>276</td><td class="neg">-111</td><td>按实际运营配置</td></tr>
+    <tr><td class="l">北水业务</td><td>53</td><td>联合体自行配置</td><td>—</td><td>53</td></tr>
+    <tr class="total"><td class="l">我司业务合计</td><td>463</td><td>332（含外包151）</td><td class="neg">-141</td><td>一线 193 ＋ 管理 8</td></tr>
+  </tbody></table></div>`;
+}
+const VEH_DETAIL = [
+  ['环卫业务','巡查车','/',1,0,0,0,0],
+  ['','电动快保车','/',12,13,0,21,0],
+  ['','吹风机','/',0,7,0,12,0],
+  ['','小型普扫车','/',0,7,0,12,0],
+  ['','洗扫车','约 18t',2,0,2,0,2],
+  ['','多功能洒水车','约 18t',2,0,1,0,1],
+  ['','车载护栏清洗机','/',1,0,1,0,1],
+  ['','电动三轮挂桶车','/',3,2,0,2,0],
+  ['','中型垃圾压缩车','约 8t',1,0,0,0,0],
+  ['','钩臂车','约 25t',1,0,1,0,1],
+  ['','小型卡车','/',1,0,0,0,0],
+  ['','小型铲车','/',1,0,0,0,0],
+  ['','垃圾桶','240L',312,312,0,312,0],
+  ['','小计','/',337,341,5,359,5,true],
+  ['绿化业务','绿化巡查车','/',1,0,1,0,1],
+  ['','洒水车','约 16t',6,0,3,0,3],
+  ['','农用自卸车','约 5t',5,0,4,0,4],
+  ['','高空作业车','约 5t',3,0,2,0,2],
+  ['','吸污车','约 8t',1,0,1,0,1],
+  ['','小型压缩收集车','约 5t',1,0,1,0,1],
+  ['','高压喷药机','轮式300L',13,13,0,1,0],
+  ['','绿篱修剪车','/',0,1,0,13,0],
+  ['','宽带绿篱机','/',34,17,0,17,0],
+  ['','割草机','/',34,34,0,34,0],
+  ['','高枝油锯','/',19,19,0,19,0],
+  ['','电动快保车','/',3,3,0,3,0],
+  ['','果皮箱','金属',61,60,0,60,0],
+  ['','油泵','/',8,4,0,4,0],
+  ['','小计','/',189,151,12,151,12,true],
+  ['合计','—','/',526,492,17,510,17,true]
+];
+function vehDetailTable(plan3){
+  function diff(qty,sub){var d=sub-qty;var cls=d<0?'neg':(d>0?'pos':'');return `<td class="${cls}">${d>0?'+':''}${d}</td>`;}
+  var body=VEH_DETAIL.map(function(r){
+    var qty=r[3], nw=plan3?r[6]:r[4], rt=plan3?r[7]:r[5], sub=nw+rt, sum=!!r[8];
+    if(r[0]==='合计') return `<tr class="total"><td class="l" colspan="2">合计</td><td>/</td><td>${qty}</td><td>${nw}</td><td>${rt}</td><td>${sub}</td>${diff(qty,sub)}</tr>`;
+    return `<tr${sum?' class="total"':''}><td class="l">${r[0]}</td><td class="l">${r[1]}</td><td>${r[2]}</td><td>${qty}</td><td>${nw}</td><td>${rt}</td><td>${sub}</td>${diff(qty,sub)}</tr>`;
+  }).join('');
+  return `<div class="tbl-scroll"><table><thead><tr><th class="l" rowspan="2">服务范围</th><th class="l" rowspan="2">设备名称</th><th rowspan="2">规格</th><th rowspan="2">数量</th><th colspan="3">测算</th><th rowspan="2">差值</th></tr><tr><th>新购</th><th>租赁</th><th>小计</th></tr></thead><tbody>${body}</tbody></table></div>`;
+}
+function vehTable(){
+  return `<div class="tbl-scroll"><table><thead><tr><th class="l">板块</th><th>招标最低</th><th>方案一二四五</th><th>差值</th><th>方案三</th><th>差值</th></tr></thead><tbody>
+    <tr><td class="l">环卫业务</td><td>337</td><td>346</td><td class="pos">+9</td><td>—</td><td>—</td></tr>
+    <tr><td class="l">绿化业务</td><td>189</td><td>163</td><td class="neg">-26</td><td>—</td><td>—</td></tr>
+    <tr class="total"><td class="l">合计（不含修枝剪工具）</td><td>526</td><td>509</td><td class="neg">-17</td><td>527</td><td class="pos">+1</td></tr>
+  </tbody></table></div><div class="table-note">修枝剪 1,072 部属工具，不计入车辆设备总量；采购人书面同意后可对部分车辆设备合理优化，未经同意不得减配。</div>`;
+}
+function renderStaff(){
+  $('page-staff').innerHTML = `
+  <div class="doc-meta" style="margin-bottom:14px">方案一、二、四、五人员/车辆按实际运营配置；方案三为保洁员按招标足额配置的对比口径。</div>
+  <div class="tabs" id="staffTabs"><button class="tab active" onclick="switchStaffTab('people',this)">人员配置</button><button class="tab" onclick="switchStaffTab('vehicle',this)">车辆配置</button></div>
+  <div class="tab-panel active" id="staffPanel-people">
+    <div class="chart-box"><h4>人员配置：招标 vs 方案二测算（人）</h4><div class="cv"><canvas id="chStaff"></canvas></div></div>
+    ${staffTable()}
+    <div class="subtabs staff-compare-tabs" id="staffCompareTabs">
+      <button class="subtab active" onclick="switchStaffCompare('key',this)">关键岗位对比（方案二）</button>
+      <button class="subtab" onclick="switchStaffCompare('area',this)">其他存量项目对比</button>
+      <button class="subtab" onclick="switchStaffCompare('detail1',this)">方案一二四五人员明细</button>
+      <button class="subtab" onclick="switchStaffCompare('detail3',this)">方案三人员明细</button>
+    </div>
+    <div class="staff-compare-panel active" id="staffCompare-key">
+      <div class="card"><div class="card-header"><h3>关键岗位对比（方案二）</h3></div><div class="card-body">
+        <div class="table-note" style="margin:0 0 12px">* 固定人员 181 人（含管理 10 人）＋绿化劳务外包 151 人 = 332 人；按岗位口径对比招标少配 141 人（环卫 30、绿化 111）。方案三仅将保洁员按招标足额配置，其余岗位仍按实际运营配置。</div>
+        <div class="tbl-scroll"><table><thead><tr><th class="l">岗位</th><th>招标</th><th>测算</th><th>差值</th></tr></thead><tbody>
+        <tr><td class="l">保洁员</td><td>61</td><td>38</td><td class="neg">-23</td></tr>
+        <tr><td class="l">绿化养护工</td><td>226</td><td>151（外包）</td><td class="neg">-75</td></tr>
+        <tr><td class="l">绿化园艺护工</td><td>70</td><td>71</td><td class="pos">+1</td></tr>
+        <tr><td class="l">保安 / 保安队长</td><td>12 / 0</td><td>8 / 4</td><td>—</td></tr>
+        <tr><td class="l">驾驶员合计</td><td>30</td><td>16</td><td class="neg">-14</td></tr>
+        </tbody></table></div>
+      </div></div>
+    </div>
+    <div class="staff-compare-panel" id="staffCompare-area">
+      <div class="card"><div class="card-header"><h3>其他存量项目对比</h3></div><div class="card-body">
+        <div class="table-note" style="margin:0 0 12px">铜陵测算保洁员 38 人，人均道路覆盖 22,144.29㎡、人均作业 8,076.35㎡；招标要求 61 人，对应 13,794.80㎡、5,031.17㎡。与存量项目比，覆盖面积高于高淳、邳州，低于奉化，作业强度及难度较大。</div>
+        <div class="tbl-scroll"><table><thead><tr><th class="l">项目</th><th>保洁员</th><th>人均道路覆盖（㎡）</th><th>人均作业（㎡）</th></tr></thead><tbody>
+          <tr class="total"><td class="l">铜陵测算</td><td>38</td><td>22,144.29</td><td>8,076.35</td></tr>
+          <tr><td class="l">招标要求</td><td>61</td><td>13,794.80</td><td>5,031.17</td></tr>
+          <tr><td class="l">高淳（不含公园绿化水域乡镇）</td><td>263</td><td>13,900.02</td><td>9,370.88</td></tr>
+          <tr><td class="l">奉化（含社区）</td><td>39</td><td>24,008.47</td><td>14,272.02</td></tr>
+          <tr><td class="l">邳州（含乡镇、不含农村）</td><td>487</td><td>11,938.36</td><td>9,354.68</td></tr>
+        </tbody></table></div>
+        <div class="table-note" style="margin:12px 0 0">注：人均覆盖面积＝不含绿化带道路面积÷保洁员数量；高淳按 263 人（含突击保洁员，不含公园绿地水域）计算；奉化含吴墩村社区；邳州不含农村保洁员 185 人、含乡镇保洁员 111 人。</div>
+      </div></div>
+    </div>
+    <div class="staff-compare-panel" id="staffCompare-detail1">
+      <div class="card"><div class="card-header"><h3>方案一、二、四、五作业人员与招标文件要求对比明细</h3></div><div class="card-body">
+        <div class="table-note" style="margin:0 0 12px">方案一、二、四、五按同一实际运营配置：一线作业 322 人（固定 171 + 绿化外包 151），另管理 10 人、合计 332 人；对比招标 463 人少配 141 人（环卫 30、绿化 111），按一线口径符合率 69.55%（环卫 60.53%、绿化 71.32%）。</div>
+        ${staffDetailTable(false)}
+        <div class="table-note" style="margin:12px 0 0">差值为“测算－招标”，负数为少配、正数为多配；方案三仅将保洁员按招标足额配置，其余岗位仍按实际运营配置。</div>
+      </div></div>
+    </div>
+    <div class="staff-compare-panel" id="staffCompare-detail3">
+      <div class="card"><div class="card-header"><h3>方案三作业人员与招标文件要求对比明细</h3></div><div class="card-body">
+        <div class="table-note" style="margin:0 0 12px">方案三仅将保洁员按招标 61 人足额配置，其余岗位仍按实际运营配置：环卫 68 人、绿化 276 人（含绿化外包 151 人），作业人员合计 344 人；对比招标 463 人少配 119 人（环卫 8、绿化 111），按表内合计符合率 74.30%。</div>
+        ${staffDetailTable(true)}
+        <div class="table-note" style="margin:12px 0 0">差值为“测算－招标”，负数为少配、正数为多配；环卫仅保洁员补至招标 61 人，绿化及其他岗位仍按实际运营配置。</div>
+      </div></div>
+    </div>
+  </div>
+  </div>
+  <div class="tab-panel" id="staffPanel-vehicle">
+    <div class="chart-box"><h4>车辆设备：招标 vs 方案二测算（部）</h4><div class="cv"><canvas id="chVeh2"></canvas></div></div>
+    ${vehTable()}
+    <div class="subtabs staff-compare-tabs" id="vehCompareTabs">
+      <button class="subtab active" onclick="switchVehCompare('detail1',this)">方案一二四五车辆明细</button>
+      <button class="subtab" onclick="switchVehCompare('detail3',this)">方案三车辆明细</button>
+    </div>
+    <div class="staff-compare-panel active" id="vehCompare-detail1">
+      <div class="card"><div class="card-header"><h3>方案一、二、四、五车辆设备与招标文件要求对比明细</h3></div><div class="card-body">
+        <div class="table-note" style="margin:0 0 12px">方案一、二、四、五各配置车辆设备 509 部，招标最低 526 部（不含修枝剪 1,072 部工具），少配 17 部；其中环卫 346 部（多 9 部）、绿化 163 部（少 26 部），缺口集中在绿化作业车辆及部分环卫车辆。</div>
+        ${vehDetailTable(false)}
+        <div class="table-note" style="margin:12px 0 0">差值为“测算小计－招标数量”，负数为少配、正数为多配；修枝剪 1,072 部属工具，不计入车辆设备总量。</div>
+      </div></div>
+    </div>
+    <div class="staff-compare-panel" id="vehCompare-detail3">
+      <div class="card"><div class="card-header"><h3>方案三车辆设备与招标文件要求对比明细</h3></div><div class="card-body">
+        <div class="table-note" style="margin:0 0 12px">方案三各配置车辆设备 527 部，比招标 526 部多 1 部；其中环卫 364 部（多 27 部，电动快保车、吹风机、小型普扫车增加），绿化 163 部（少 26 部，与方案一二四五相同）。</div>
+        ${vehDetailTable(true)}
+        <div class="table-note" style="margin:12px 0 0">差值为“测算小计－招标数量”，负数为少配、正数为多配；修枝剪 1,072 部属工具，不计入车辆设备总量。</div>
+      </div></div>
+    </div>
+  </div>`;
+}
+function switchStaffTab(key, btn){
+  document.querySelectorAll('#staffTabs .tab').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  $('page-staff').querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  var panel=$('staffPanel-'+key); if(panel) panel.classList.add('active');
+  staffCharts();
+}
+function switchStaffCompare(key, btn){
+  document.querySelectorAll('#staffCompareTabs .subtab').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  document.querySelectorAll('#staffPanel-people .staff-compare-panel').forEach(p=>p.classList.remove('active'));
+  var panel=document.getElementById('staffCompare-'+key); if(panel) panel.classList.add('active');
+}
+function switchVehCompare(key, btn){
+  document.querySelectorAll('#vehCompareTabs .subtab').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  document.querySelectorAll('#staffPanel-vehicle .staff-compare-panel').forEach(p=>p.classList.remove('active'));
+  var panel=document.getElementById('vehCompare-'+key); if(panel) panel.classList.add('active');
+}
+function riskTabs(active){
+  return `<div class="tabs" id="riskTabs"><button class="tab ${active==='all'?'active':''}" onclick="switchRiskTab('all',this)">全部（6）</button><button class="tab ${active==='mid'?'active':''}" onclick="switchRiskTab('mid',this)">中风险（2）</button><button class="tab ${active==='low'?'active':''}" onclick="switchRiskTab('low',this)">低风险（4）</button></div>`;
+}
+function renderRisks(){
+  $('page-risks').innerHTML = riskTabs('all') + `
+  <div class="doc-meta" style="margin-bottom:14px">以下按“事实—影响—应对—责任时点”展开：中风险 2 项须在上会前形成闭环，低风险 4 项纳入运营期月度监控。</div>
+  <div class="risk-stats">
+    <div class="risk-stat"><b>6</b><span>风险事项</span></div>
+    <div class="risk-stat warn"><b>2</b><span>中风险</span></div>
+    <div class="risk-stat danger"><b>2</b><span>上会前须闭环</span></div>
+    <div class="risk-stat warn"><b>24.7</b><span>万元/月 · 人员少配潜在扣款</span></div>
+  </div>
+  <div id="riskList">
+  ${RISKS.map((r,i)=>`<div class="risk-item ${r[0]==='中'?'mid':'low'}" data-lv="${r[0]==='中'?'mid':'low'}">
+    <div class="risk-head"><span class="risk-level ${r[0]==='中'?'mid':'low'}">${r[0]}风险</span><span class="risk-title">${i+1}. ${r[1]}</span><span class="risk-domain">${r[3]}</span></div>
+    <div class="risk-desc">${r[2]}</div>
+    <div class="risk-grid">
+      <div class="risk-block"><b>影响</b><p>${r[4]}</p></div>
+      <div class="risk-block"><b>应对</b><p>${r[5]}</p></div>
+    </div>
+    <div class="risk-meta"><span>责任：${r[6]}</span><span>时点：${r[7]}</span><span>依据：${r[8]}</span></div>
+  </div>`).join('')}
+  </div>`;
+}
+function switchRiskTab(lv, btn){
+  document.querySelectorAll('#riskTabs .tab').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  document.querySelectorAll('#page-risks [data-lv]').forEach(tr=>{tr.style.display=(lv==='all'||tr.getAttribute('data-lv')===lv)?'':'none';});
+}
+function renderConclusion(){
+  $('page-conclusion').innerHTML = `
+  <div class="concl-box"><div class="big">评审结论：同意投资（按评审意见落实后履行合同审批）</div>
+    <div class="sub">项目为铜陵经开区城市管家一体化新增项目，服务期 1 年一签、最多 3 年，财政资金保障。按推荐方案二（环卫 2027-07-01 进场）测算：三年平均含税收入 1,952.28 万元、平均净利润 170.69 万元、平均净利润率 9.20%、首年最低 7.57%，均高于集团 8% 一般要求及 6% 低效底线；全投资 IRR 38.86%。初期总投资 410.18 万元，车辆设备 61.99 万元占年服务费 3.05%，低于 30% 红线。核心风险为人员较招标少配 141 人、季度回款 10% 年终送审、分批进场导致服务期缩短。</div>
+    <div class="concl-meta"><span class="tag warn">待上会 · 2026-11-16</span><span class="tag info">开标 2026-11-18</span><span class="tag ok">推荐方案二</span><span class="tag gray">西南区域</span></div>
+  </div>
+  <div class="grid g2">
+    <div class="card"><div class="card-header"><h3>投前落实事项</h3><span class="badge">4 项</span></div><div class="card-body"><div class="steps">
+      <div class="step"><b>人员补足：</b>按招标要求补足 141 人（环卫 30、绿化 111），避免月扣款约 24.7 万元。<span class="owner">市场拓展中心 + 崔晓晖 / 运营中心</span></div>
+      <div class="step"><b>回款保障：</b>季度 90% 进度款、10% 年终送审价款，须明确支付时限与逾期责任。<span class="owner">市场拓展中心 + 崔晓晖</span></div>
+      <div class="step"><b>进场安排：</b>书面确认各子项到期时间与移交节奏，据实编制首年收入曲线。<span class="owner">市场拓展中心 + 崔晓晖</span></div>
+      <div class="step"><b>报价复核：</b>本项目报价较限价下浮约 18.3%，须复核当地惯例与成本边界。<span class="owner">市场拓展中心 + 崔晓晖</span></div>
+    </div></div></div>
+    <div class="card"><div class="card-header"><h3>投后落实事项</h3><span class="badge">3 项</span></div><div class="card-body"><div class="steps">
+      <div class="step"><b>车辆配置：</b>按招标 526 部配置，租赁车辆满足规格与数量要求。<span class="owner">项目公司 + 运营中心</span></div>
+      <div class="step"><b>考核管控：</b>三级考核、月扣款与履约保证金 2.5%，须建立质量与扣分预警。<span class="owner">项目公司 + 运营中心</span></div>
+      <div class="step"><b>用工合规：</b>绿化劳务外包 151 人须符合招标及劳动用工要求，避免转包认定。<span class="owner">项目公司 + 法务</span></div>
+    </div></div></div>
+  </div>
+  <div class="card"><div class="card-header"><h3>评审与投标进程</h3><span class="badge">2026 年</span></div><div class="card-body"><div class="timeline">
+    <div class="tl-item"><div class="tl-date">2026-11-06</div><div class="tl-title">项目上报 · 投资评审报告出具</div><div class="tl-desc">市场中心崔晓晖编制，运营、安环、供应链、法务、风控完成专业审核。</div></div>
+    <div class="tl-item"><div class="tl-date">2026-11-16</div><div class="tl-title">上会评审</div><div class="tl-desc">评审会提示按五个方案测算，推荐方案二（环卫 2027-07-01 进场）。</div></div>
+    <div class="tl-item"><div class="tl-date">2026-11-18</div><div class="tl-title">开标</div><div class="tl-desc">公开招标，联合体投标：北控城服 + 北水管网。</div></div>
+    <div class="tl-item"><div class="tl-date">2027-01-01 / 07-01</div><div class="tl-title">进场运营</div><div class="tl-desc">方案二：绿化按原合同衔接，环卫 2027-07-01 进场。</div></div>
+  </div></div></div>`;
+
+}
+function infoCard(title, items, badge){
+  return `<div class="card"><div class="card-header"><h3>${title}</h3>${badge?`<span class="badge">${badge}</span>`:''}</div><div class="card-body"><div class="info-list">
+    ${items.map(it=>`<div class="info-item"><div class="k">${it[0]}</div><div class="v">${it[1]}</div></div>`).join('')}
+  </div></div></div>`;
+}
+var INFO_TABS=[['background','背景信息'],['base','基础信息'],['invest','投资信息'],['ops','运营信息']];
+function infoTabs(active){
+  return `<div class="tabs" id="infoTabs">${INFO_TABS.map(t=>`<button class="tab ${active===t[0]?'active':''}" onclick="navigateTo('${t[0]}')">${t[1]}</button>`).join('')}</div>`;
+}
+function renderBackground(){
+  $('page-background').innerHTML = infoTabs('background') + infoCard('背景信息',[
+    ['采购方式','公开招标，开标日期 2026-11-18。'],
+    ['采购主体','铜陵经济技术开发区管理委员会。'],
+    ['投标主体','北控城市环境服务集团有限公司与北水管网（北京）科技有限公司组成联合体投标；我司负责环卫保洁、园林绿化两个板块，北水负责市政设施运维、水体管护。'],
+    ['当地财政','2026 年经开区城维费科目预算 3,632.4 万元，可覆盖本项目服务费；2026 年一般公共预算收入 17.2 亿元，与上一年度持平。'],
+    ['竞争对手','首创环保（铜陵水务板块运营 4 座供水厂、3 座污水处理厂，尚未进入环卫）；侨银股份（2026 年 5 月中标铜陵城区环卫标段，年服务费约 1,000 万元，已设属地团队）；安徽水安建设集团（拟联合上一轮环卫民营企业组成联合体）。'],
+    ['前序运营','清扫保洁含两标段、转运站及垃圾收运由 3 家公司承包；园林绿化一至四标段由 4 家单位承包。上一轮环卫和绿化预算约 1,983 万元/年、中标约 1,588.66 万元/年，按月支付、无拖欠。'],
+    ['续约衔接','上一轮未到期子标段维持原合同至期满，本轮相应业务服务期缩短；按“到期一项、移交一项、逐项衔接”分批进场。']
+  ],'投资评审报告 · 项目概况') + `
+  <div class="card"><div class="card-header"><h3>服务范围及内容</h3></div><div class="card-body no-padding"><div class="tbl-scroll"><table><thead><tr><th class="l">板块</th><th>预算（万元/年）</th><th class="l">主要内容</th></tr></thead><tbody>
+    <tr><td class="l">环境卫生保洁</td><td>512.80</td><td class="l">东部园区 15 条道路约 84.15 万㎡清扫保洁；垃圾中转站 1 座（10 吨）。</td></tr>
+    <tr><td class="l">园林绿化管养</td><td>1,972.89</td><td class="l">道路绿化约 248.12 万㎡（行道树 25,521 棵）；翠湖公园绿地 38.76 万㎡、步道 10.15 万㎡、公厕 4 座、停车场 2 个；五松渠湿地绿地 9.1 万㎡；白蚁防治。</td></tr>
+    <tr><td class="l">市政设施运维</td><td>850.56</td><td class="l">东西部园区 57 条道路约 128.64 km、市政管网；泵站及拦水闸；北水负责。</td></tr>
+    <tr><td class="l">水体管护</td><td>472.98</td><td class="l">翠湖公园水体约 15.39 万㎡、五松渠及湿地约 40.31 万㎡；北水负责。</td></tr>
+    <tr class="total"><td class="l">合计</td><td>3,809.23</td><td class="l">我司负责环卫 + 绿化，限价合计 2,484 万元/年，拟投标 2,030.05 万元/年。</td></tr>
+  </tbody></table></div></div></div>`;
+}
+function renderBase(){
+  $('page-base').innerHTML = infoTabs('base') + infoCard('基础信息',[
+    ['项目模式','政府采购服务，环卫保洁、园林绿化、市政设施、水体管护四部分一体化管理。'],
+    ['服务期限','服务期 1 年；合同一年一签，年度预算保障且考核合格可续签，总服务期最多不超过 3 年；续签条件为各子项年度考核平均分不低于 80 分。'],
+    ['服务费','最高投标限价 3,809.23 万元/年；我司范围（环卫 + 绿化）限价 2,484 万元/年，拟投标 2,030.05 万元/年。'],
+    ['付费方式','按月度考核、季度付费：每季度支付应付总额 90%，剩余 10% 以年度为周期，待工作量完成送审后按审定金额一次性付清。'],
+    ['考核方式','三级考核：第三方日常考核（每周 2 次）、经开区市政园林中心网格员周考核、市区领导及双创办督查；月考核 90 分及以上全额支付，85–90 分每低 0.1 分扣 100 元，80–85 分每低 0.1 分扣 200 元，低于 80 分扣履约保证金 10%。'],
+    ['保证金','投标保证金无；履约保证金为合同价的 2.5%。'],
+    ['调价机制','无调价机制。'],
+    ['人员要求','总人数不低于 516 人，其中我司业务 463 人（环卫 76、绿化 387）、北水 53 人；履约期内人员须按招标要求配置。'],
+    ['车辆要求','环卫车辆 13 辆、绿化车辆 17 辆；车辆设备最低配置合计 526 部（不含修枝剪 1,072 部工具）。']
+  ],'投资评审报告 · 基础信息');
+}
+function renderInvest(){
+  $('page-invest').innerHTML = infoTabs('invest') + infoCard('投资信息',[
+    ['投资主体','北控城市环境服务集团有限公司。'],
+    ['资金来源','集团注资，中标后独资组建项目公司。'],
+    ['项目总投资','方案二 410.18 万元：车辆设备 61.99 万元、前期开办费 25.58 万元、流动资金 322.61 万元；占年服务费 20.2%，车辆设备占 3.05%，未超集团 30% 标准。'],
+    ['其他方案投资','方案一 455.83、方案三 460.58、方案四 454.05、方案五 455.51 万元。'],
+    ['前期费用','招标代理服务费 13.97 万元；前期开荒费按环卫、绿化两个板块年服务费的 3% 计列，合计 60.90 万元/年，逐年支付、与回款挂钩。'],
+    ['收益指标','方案二平均净利润 170.69 万元/年、平均净利率 9.20%、首年最低 7.57%、全投资 IRR 38.86%。'],
+    ['期末资产处置','车辆以租赁为主，新购设备按折旧年限计提；合作期满按合同约定处置。']
+  ],'投资评审报告 · 投资信息');
+}
+function renderOps(){
+  $('page-ops').innerHTML = infoTabs('ops') + infoCard('运营信息',[
+    ['拟运营单位','北控城服铜陵项目公司（拟设立）。'],
+    ['注册资本金','200 万元，以实际注资为准。'],
+    ['股权结构','北控城市环境服务集团有限公司持股 100%。'],
+    ['人员配置','方案二：固定人员 181 人（含管理 10 人）、绿化劳务外包 151 人，合计 332 人；招标要求 463 人，少配 141 人（环卫 30、绿化 111）。'],
+    ['人均作业面积','测算保洁员 38 人，人均道路面积约 22,144 ㎡、人均作业面积约 8,076 ㎡；招标保洁员 61 人对应约 13,795 ㎡、5,031 ㎡。'],
+    ['车辆配置','方案二 509 部（招标 526 部，少 17 部）：环卫 346 部、绿化 163 部；方案三 527 部（多 1 部）。'],
+    ['作业方式','环卫机械化清扫 + 人工保洁；绿化按一级养护标准，乔木、灌木、草坪分区管养；配套智慧环卫与考核台账。']
+  ],'投资评审报告 · 运营信息');
+}
+/* ============ 上会资料 · 资料切换 ============ */
+var DOC_TABS=[['doc1','运营评审意见'],['doc5','投资测算（5 方案）'],['doc4','招标文件']];
+function docTabs(active){
+  return `<div class="tabs doc-tabs">${DOC_TABS.map(t=>`<button class="tab ${active===t[0]?'active':''}" onclick="navigateTo('${t[0]}')">${t[1]}</button>`).join('')}</div>`;
+}
+var DOC={name:'城服运营中心关于铜陵市经开区城市管家一体化管理项目的运营评审意见',file:'files/ops-opinion.docx',dl:'城服运营中心关于铜陵市经开区城市管家一体化管理项目的运营评审意见.docx'};
+function renderDoc(){
+  $('page-doc1').innerHTML = docTabs('doc1') + `
+  <div class="doc-toolbar"><span class="dt-name">城服运营中心关于铜陵市经开区城市管家一体化管理项目的运营评审意见</span><div class="dt-actions"><button class="doc-btn" onclick="window.print()">打印 / 导出 PDF</button><a class="doc-dl" href="${DOC.file}" download="${DOC.dl}">下载原件（Word）</a></div></div>
+  <div class="doc-meta">城服运营中心 · 2026-11 · 新增项目 · 环卫 + 绿化（我司范围）· 服务期 1 年一签、最多 3 年 · 待上会</div>
+
+  <div class="doc-section"><h3>一、运营风险汇总</h3>
+    <h4>1. 利润与投资约束</h4>
+    <p>方案二（推荐）平均净利率 9.20%、首年最低 7.57%，高于集团 8% 一般要求；方案三按招标足额配置保洁员后平均净利率降至 6.18%、首年 5.72%，跌破 6% 低效项目底线。方案二初期总投资 410.18 万元，车辆设备 61.99 万元占年服务费 3.05%，低于 30% 红线，投资约束可控。</p>
+    <h4>2. 人员配置低于招标要求</h4>
+    <p>招标要求我司业务 463 人（环卫 76、绿化 387），方案二测算 332 人（固定 181 人含管理 10 人 + 绿化劳务外包 151 人），少配 141 人（一线口径，另有管理 10 人）；按现配置测算月考核扣款约 24.7 万元，存在点名核查与履约扣款风险。</p>
+    <h4>3. 回款周期与年终送审</h4>
+    <p>按月度考核、季度付费，每季度支付 90%，剩余 10% 年终送审后付清，回款周期长，不符合集团按月回款要求；须明确支付时限、送审时限及逾期责任。</p>
+    <h4>4. 分批进场与服务期缩短</h4>
+    <p>上一轮部分子标段履行至期满，若中标后不能统一进场，环卫推迟至 2027-07-01、绿化按原合同衔接，实际服务期缩短、首年收入减少；方案二已按推迟进场测算，首年收入 1,796.73 万元。</p>
+    <h4>5. 考核扣款严格</h4>
+    <p>环卫三级考核、绿化月考核；年度累计三次 60—80 分或一次低于 60 分，全额扣除履约保证金并解除合同；月扣款与 2.5% 履约保证金形成叠加风险。</p>
+    <h4>6. 用工与分包合规</h4>
+    <p>绿化劳务外包 151 人，须符合招标文件及劳动用工要求，避免被认定为转包；超龄人员须完善用工协议、商业保险及退场补偿安排。</p>
+  </div>
+
+  <div class="doc-section"><h3>二、利润及投资</h3>
+    <h4>1. 五个方案收益对比</h4>
+    <div class="tbl-scroll"><table><thead><tr><th class="l">方案</th><th>收入（含税）</th><th>平均净利润</th><th>平均净利率</th><th>首年净利率</th><th>IRR（税后）</th><th>初期投资</th></tr></thead><tbody>
+      ${PLANS.map(p=>`<tr${p.tag?' class="highlight"':''}><td class="l">${p.k}</td><td>${money(p.rev)}</td><td>${money(p.net)}</td><td>${p.margin.toFixed(2)}%</td><td class="${p.min<6?'neg':''}">${p.min.toFixed(2)}%</td><td>${p.irr.toFixed(2)}%</td><td>${money(p.invest)}</td></tr>`).join('')}
+    </tbody></table></div>
+    <p>推荐方案二：考虑子标段到期时间不一，环卫推迟至 2027-07-01 进场，平均净利率 9.20%、首年 7.57%、全投资 IRR 38.86%；方案一收益最高但需按原时点统一进场，方案三虽人员足额但首年跌破 6% 底线。</p>
+    <h4>2. 方案二投资构成</h4>
+    <div class="tbl-scroll"><table><thead><tr><th class="l">项目</th><th>金额（万元）</th><th class="l">说明</th></tr></thead><tbody>
+      <tr><td class="l">新购及收购车辆设备</td><td>61.99</td><td class="l">占年服务费 3.05%，低于 30% 红线</td></tr>
+      <tr><td class="l">前期开办费</td><td>25.58</td><td class="l">办公、开办及前期支出</td></tr>
+      <tr><td class="l">流动资金</td><td>322.61</td><td class="l">首年垫资及季度回款缺口</td></tr>
+      <tr class="total"><td class="l">合计</td><td>410.18</td><td class="l">占年服务费 20.2%</td></tr>
+    </tbody></table></div>
+    <div class="reply-grid"><div class="reply invest"><b>投资回复</b>方案二已按实际进场时点重算收入、成本及流动资金，首年收入与净利下降，但投资减少 45.65 万元，IRR 38.86%。</div><div class="reply op"><b>运营答复</b>建议以方案二投标，首年按 1,796.73 万元收入编制预算，后续满年按 2,030.05 万元执行。</div></div>
+  </div>
+
+  <div class="doc-section"><h3>三、中标把握性</h3>
+    <p>项目由联合体成员北水管网与合作方前期组织策划，已对接招标代理及经开区相关领导，中标把握性较大；联合体投标主体为北控城服 + 北水管网，我司负责环卫与绿化板块。</p>
+  </div>
+
+  <div class="doc-section"><h3>四、服务范围及内容</h3>
+    <div class="tbl-scroll"><table><thead><tr><th class="l">板块</th><th>年费用（万元）</th><th class="l">主要内容</th></tr></thead><tbody>
+      <tr><td class="l">环卫</td><td>512</td><td class="l">道路清扫保洁、生活垃圾收运、转运站运行、公厕保洁</td></tr>
+      <tr><td class="l">园林绿化</td><td>1,972</td><td class="l">道路绿化、公园、湿地养护</td></tr>
+      <tr><td class="l">市政</td><td>850</td><td class="l">市政设施运维</td></tr>
+      <tr><td class="l">水体</td><td>472</td><td class="l">水域保洁及管护</td></tr>
+      <tr class="total"><td class="l">合计</td><td>3,806</td><td class="l">最高限价 3,809.23 万元/年</td></tr>
+    </tbody></table></div>
+    <p>我司范围（环卫 + 绿化）约 2,484 万元/年；拟投标 2,030.05 万元/年，为限价的 81.7%，较限价少 453.95 万元/年。</p>
+  </div>
+
+  <div class="doc-section"><h3>五、考核标准</h3>
+    <p>月考核 90 分及以上全额支付；85—90 分每低 0.1 分扣 100 元；80—85 分每低 0.1 分扣 200 元；低于 80 分扣履约保证金 10%。年度累计三次 60—80 分或一次低于 60 分，全额扣除履约保证金并解除合同。</p>
+  </div>
+
+  <div class="doc-section"><h3>六、人员配置</h3>
+    <h4>1. 最低配置要求</h4>
+    <p>招标总人数不低于 516 人，其中我司业务 463 人（环卫 76、绿化 387），北水 53 人。</p>
+    <h4>2. 与测算对比</h4>
+    <div class="tbl-scroll"><table><thead><tr><th class="l">类别</th><th>招标要求</th><th>方案二测算</th><th>差异</th></tr></thead><tbody>
+      <tr><td class="l">环卫</td><td>76</td><td>46</td><td class="neg">-30</td></tr>
+      <tr><td class="l">绿化</td><td>387</td><td>276</td><td class="neg">-111</td></tr>
+      <tr class="total"><td class="l">合计（一线）</td><td>463</td><td>322</td><td class="neg">-141</td></tr>
+    </tbody></table></div>
+    <p>测算一线作业 322 人（固定 171 人 + 绿化劳务外包 151 人），另有管理 10 人、合计 332 人；人均道路面积约 22,144 ㎡，高于招标口径 13,795 ㎡及高淳、邳州对标项目，考核压力较大。</p>
+  </div>
+
+  <div class="doc-section"><h3>七、车辆设备配置</h3>
+    <div class="tbl-scroll"><table><thead><tr><th class="l">类别</th><th>招标最低</th><th>方案二配置</th><th>差异</th></tr></thead><tbody>
+      <tr><td class="l">环卫</td><td>337</td><td>346</td><td class="pos">+9</td></tr>
+      <tr><td class="l">绿化</td><td>189</td><td>163</td><td class="neg">-26</td></tr>
+      <tr class="total"><td class="l">合计</td><td>526</td><td>509</td><td class="neg">-17</td></tr>
+    </tbody></table></div>
+    <p>招标设备最低 526 部（不含修枝剪 1,072 部工具）；方案三按招标足额配置后 527 部（多 1 部）。租赁车辆须满足规格、数量及进场时限，避免考核扣款或违约退出。</p>
+  </div>
+
+  <div class="doc-section"><h3>八、环卫作业与人车效率</h3>
+    <p>我司环卫范围包括东部园区 15 条道路、1 座 10 吨中转站，作业面积 84.15 万㎡；测算保洁员 38 人，人均道路面积 22,144 ㎡，高于招标配置口径 13,795 ㎡，也高于高淳、邳州对标项目，须通过机械替代、路线优化提高人效。</p>
+  </div>
+
+  <div class="doc-section"><h3>九、园林绿化</h3>
+    <p>绿化养护面积约 295 万㎡（东西部道路绿化 248.12 万㎡、翠湖公园 48.9 万㎡、五松渠湿地 9.1 万㎡），行道树 25,521 株；年直接运行成本中绿化养护 1,124.91 万元，占直接成本 77.3%，人工成本 817.12 万元，是成本管控重点。</p>
+  </div>
+
+  <div class="doc-section"><h3>十、回款</h3>
+    <p>季度支付 90%，剩余 10% 年终送审后付清；财政资金保障，但送审周期与考核结果直接影响回款。投标前须明确支付时限、送审资料清单、逾期责任，并按季度回款编制现金流，避免流动资金缺口扩大。</p>
+  </div>
+
+  <div class="doc-section"><h3>十一、退场</h3>
+    <p>项目一年一签、最多 3 年，到期未续签或中途退场时，人员补偿、车辆设备折现损失、调拨物流成本尚未计入测算；须在合同中明确退场补偿、资产处置及人员接收安排，降低退场损失。</p>
+  </div>
+
+  <div class="doc-section"><h3>十二、降收降利</h3>
+    <p>本项目报价较限价下浮约 18.3%，方案三按招标足额配置后首年净利率 5.72%，已跌破 6% 低效底线。若后续考核扣款、人工上涨或服务范围增加，收益将进一步下降；须设置“首年净利率低于 6% 即重新决策”红线，并在合同中明确调价及新增服务结算机制。</p>
+    <div class="reply-grid"><div class="reply invest"><b>投资回复</b>已按五方案分别测算，推荐方案二；方案三保留为人员足额配置兜底方案。</div><div class="reply op"><b>运营答复</b>投标前完成人员、车辆、回款、考核、退场五项确认，未闭环不进场。</div></div>
+  </div>`;
+}
+var TIHING={name:'铜陵经开区城市管家一体化管理项目—投资评审报告',file:'files/invest-report.docx',dl:'铜陵经开区城市管家一体化管理项目—投资评审报告.docx'};
+function renderDocCost(){
+  $('page-doc2').innerHTML = docTabs('doc2') + `
+  <div class="doc-toolbar"><span class="dt-name">${TIHING.name}</span><div class="dt-actions"><button class="doc-btn" onclick="window.print()">打印 / 导出 PDF</button><a class="doc-dl" href="${TIHING.file}" download="${TIHING.dl}">下载原件（Word）</a></div></div>
+  <div class="doc-meta">北控城市资源集团 · 市场中心 · 崔晓晖 · 2026-11-06 · 运营/安环/供应链/法务/风控已完成审核</div>
+  <div class="doc-section"><h3>一、项目概况</h3><p>铜陵经开区城市管家一体化管理项目，服务内容为环境卫生保洁、园林绿化管养、市政设施运维、水体管护四部分；服务期 1 年一签、最多 3 年；最高限价 3,809.23 万元/年。</p></div>
+  <div class="doc-section"><h3>二、收益评估</h3>
+    <table><thead><tr><th class="l">方案</th><th>平均净利率</th><th>最低净利率</th><th>IRR</th><th>初期投资</th></tr></thead><tbody>
+    ${PLANS.map(p=>`<tr><td class="l">${p.k}</td><td>${p.margin.toFixed(2)}%</td><td>${p.min.toFixed(2)}%</td><td>${p.irr.toFixed(2)}%</td><td>${money(p.invest)} 万元</td></tr>`).join('')}
+    </tbody></table>
+    <p>推荐方案二：考虑上一轮子标段到期时间不一、环卫推迟至 2027-07-01 进场，平均净利率 9.20%、首年 7.57%、IRR 38.86%。</p>
+  </div>
+  <div class="doc-section"><h3>三、风险及问题</h3><ol>${RISKS.map(r=>`<li><b>[${r[0]}]</b> ${r[2]}</li>`).join('')}</ol></div>`;
+}
+var DOC3={name:'评审会提示 11.16（铜陵经开）',file:'files/review-tip.docx',dl:'评审会提示11.16（铜陵经开）.docx'};
+function renderDoc3(){
+  $('page-doc3').innerHTML = docTabs('doc3') + `
+  <div class="doc-toolbar"><span class="dt-name">${DOC3.name}</span><div class="dt-actions"><button class="doc-btn" onclick="window.print()">打印 / 导出 PDF</button><a class="doc-dl" href="${DOC3.file}" download="${DOC3.dl}">下载原件（Word）</a></div></div>
+  <div class="doc-meta">评审会提示 · 2026-11-16 · 五个测算方案 · 推荐方案二</div>
+  <div class="doc-section"><h3>一、成本及利润</h3>
+    <table><thead><tr><th class="l">指标</th>${PLANS.map(p=>`<th>${p.k.split(' ')[0]}</th>`).join('')}</tr></thead><tbody>
+      <tr><td class="l">收入（含税）</td>${PLANS.map(p=>`<td>${money(p.rev)}</td>`).join('')}</tr>
+      <tr><td class="l">平均净利润</td>${PLANS.map(p=>`<td>${money(p.net)}</td>`).join('')}</tr>
+      <tr><td class="l">平均净利率</td>${PLANS.map(p=>`<td>${p.margin.toFixed(2)}%</td>`).join('')}</tr>
+      <tr><td class="l">最低（首年）</td>${PLANS.map(p=>`<td class="${p.min<6?'neg':''}">${p.min.toFixed(2)}%</td>`).join('')}</tr>
+      <tr><td class="l">IRR（税后）</td>${PLANS.map(p=>`<td>${p.irr.toFixed(2)}%</td>`).join('')}</tr>
+    </tbody></table>
+    <p>方案三按招标足额配置保洁员，平均净利率 6.18%、首年 5.72%，首年跌破 6% 低效底线。</p>
+  </div>
+  <div class="doc-section"><h3>二、人车配置</h3>
+    <p>方案一二四五：作业人员 332 人（固定 181 含管理 10、绿化外包 151），较招标少配 141 人；车辆 509 部，较招标 526 部少 17 部。</p>
+    <p>方案三：保洁员按招标足额配置，车辆 527 部（多 1 部）。</p>
+  </div>`;
+}
+var DOC4={name:'安徽铜陵市经开区项目招标文件正文',file:'files/tender.pdf',dl:'安徽铜陵市经开区项目招标文件正文.pdf'};
+function renderDoc4(){
+  $('page-doc4').innerHTML = docTabs('doc4') + `
+  <div class="doc-toolbar"><span class="dt-name">${DOC4.name}</span><div class="dt-actions"><button class="doc-btn" onclick="window.print()">打印 / 导出 PDF</button><a class="doc-dl" href="${DOC4.file}" download="${DOC4.dl}">下载原件（PDF）</a></div></div>
+  <div class="doc-meta">公开招标 · 开标 2026-11-18 · 采购人：铜陵经济技术开发区管理委员会 · 投标主体：北控城服 + 北水管网联合体</div>
+  <div class="doc-section"><h3>一、招标文件信息</h3>
+    <div class="tbl-scroll"><table><thead><tr><th class="l">项目</th><th class="l">招标文件载明内容</th></tr></thead><tbody>
+      <tr><td class="l">项目名称</td><td class="l">铜陵市经开区城市管家一体化管理项目</td></tr>
+      <tr><td class="l">采购人</td><td class="l">铜陵经济技术开发区管理委员会</td></tr>
+      <tr><td class="l">招标方式</td><td class="l">公开招标，允许联合体投标</td></tr>
+      <tr><td class="l">服务期</td><td class="l">1 年，一年一签；考核合格且预算保障可续签，总服务期不超过 3 年</td></tr>
+      <tr><td class="l">开标时间</td><td class="l">2026-11-18</td></tr>
+      <tr><td class="l">投标主体</td><td class="l">北控城服 + 北水管网联合体；我司承担环卫与绿化业务</td></tr>
+      <tr><td class="l">文件效力</td><td class="l">本页为投标评审摘要，条款以采购人发布的正式招标文件及澄清答疑为准</td></tr>
+    </tbody></table></div>
+  </div>
+  <div class="doc-section"><h3>二、标段与预算</h3>
+    <div class="tbl-scroll"><table><thead><tr><th class="l">板块</th><th class="n">年预算（万元）</th><th class="l">主要内容</th></tr></thead><tbody>
+      <tr><td class="l">环卫</td><td class="n">512</td><td class="l">道路清扫保洁、生活垃圾收集转运、公厕管护</td></tr>
+      <tr><td class="l">园林绿化</td><td class="n">1,972</td><td class="l">公园游园、道路绿化、行道树及草坪养护</td></tr>
+      <tr><td class="l">市政</td><td class="n">850</td><td class="l">市政道路及附属设施日常维护</td></tr>
+      <tr><td class="l">水体</td><td class="n">472</td><td class="l">河道、水体保洁及水生植物管护</td></tr>
+      <tr class="total"><td class="l">合计</td><td class="n">3,806</td><td class="l">总限价约 3,806 万元；另有 3,809.23 万元口径，以正式文件为准</td></tr>
+    </tbody></table></div>
+    <p class="sec-note">我司投标范围环卫 + 绿化约 2,484 万元/年，占项目总限价约 65.3%；市政、水体由联合体成员按分工承担。</p>
+  </div>
+  <div class="doc-section"><h3>三、服务范围与内容</h3>
+    <ul>
+      <li><b>环卫作业：</b>道路机扫、人工保洁、生活垃圾收集与转运、公厕及环卫设施管护，按招标作业量清单配置人员和车辆。</li>
+      <li><b>园林绿化：</b>公园游园及道路绿地养护、行道树修剪、草坪管护、病虫害防治与季节性补植。</li>
+      <li><b>市政设施：</b>道路及附属设施巡查、日常小修维护，不含大中修工程。</li>
+      <li><b>水体管护：</b>河道及水体保洁、漂浮物清理、水生植物养护。</li>
+      <li><b>一体化要求：</b>四个板块统一项目管理、统一考核、统一应急响应；跨板块作业由项目公司统筹调度。</li>
+    </ul>
+    <p class="sec-note">具体作业面积、设施数量、频次及边界以招标文件工程量清单和现场移交确认为准。</p>
+  </div>
+  <div class="doc-section"><h3>四、报价与支付</h3>
+    <div class="tbl-scroll"><table><thead><tr><th class="l">项目</th><th class="n">数值</th><th class="l">说明</th></tr></thead><tbody>
+      <tr><td class="l">我司范围年服务费</td><td class="n">约 2,484 万元</td><td class="l">环卫 512 + 绿化 1,972</td></tr>
+      <tr><td class="l">拟投标报价（含税）</td><td class="n">2,030.05 万元</td><td class="l">为范围限价的 81.7%</td></tr>
+      <tr><td class="l">较范围限价</td><td class="n">-453.95 万元</td><td class="l">下浮约 18.3%，须复核当地成本边界</td></tr>
+      <tr><td class="l">付款方式</td><td class="n">90% + 10%</td><td class="l">按月度考核、季度付费；季度支付 90%，剩余 10% 年终送审后付清</td></tr>
+      <tr><td class="l">履约保证金</td><td class="n">合同价 2.5%</td><td class="l">投标保证金无</td></tr>
+    </tbody></table></div>
+    <p class="sec-note">季度回款 90%、10% 年终送审，与集团按月回款要求存在差异，需在投标澄清阶段明确支付时限及逾期责任。</p>
+  </div>
+  <div class="doc-section"><h3>五、人员与车辆门槛</h3>
+    <div class="tbl-scroll"><table><thead><tr><th class="l">类别</th><th class="n">招标要求</th><th class="l">口径说明</th></tr></thead><tbody>
+      <tr><td class="l">我司业务人员</td><td class="n">463 人</td><td class="l">环卫 76 人、绿化 387 人；不含北水业务</td></tr>
+      <tr><td class="l">联合体人员合计</td><td class="n">516 人</td><td class="l">我司 463 人 + 北水 53 人</td></tr>
+      <tr><td class="l">车辆设备最低配置</td><td class="n">526 部</td><td class="l">环卫 337 部、绿化 189 部；不含修枝剪等小型工具</td></tr>
+      <tr><td class="l">项目经理及关键岗位</td><td class="n">按文件配置</td><td class="l">须满足招标文件学历、职称、业绩及常驻要求</td></tr>
+    </tbody></table></div>
+    <p class="sec-note">人员按岗位点核、车辆按规格和数量核验；外包人员是否计入招标人数需在澄清中确认。</p>
+  </div>
+  <div class="doc-section"><h3>六、考核与退出</h3>
+    <div class="tbl-scroll"><table><thead><tr><th class="l">考核区间</th><th class="l">处理规则</th></tr></thead><tbody>
+      <tr><td class="l">月考核 ≥ 90 分</td><td class="l">全额支付当期服务费</td></tr>
+      <tr><td class="l">85–90 分</td><td class="l">每低 0.1 分扣 100 元</td></tr>
+      <tr><td class="l">80–85 分</td><td class="l">每低 0.1 分扣 200 元</td></tr>
+      <tr><td class="l">低于 80 分</td><td class="l">扣履约保证金 10%，并限期整改</td></tr>
+      <tr><td class="l">年度考核不合格</td><td class="l">采购人可终止合同或不续签；须完成人员、车辆及资料移交</td></tr>
+    </tbody></table></div>
+    <p class="sec-note">环卫执行三级考核、绿化执行月考核；扣款与履约保证金联动，项目公司须建立质量与扣分预警。</p>
+  </div>
+  <div class="doc-section"><h3>七、投标前澄清事项</h3>
+    <ul>
+      <li><b>进场界面：</b>书面确认环卫、绿化、市政、水体各子项原合同到期时间、移交范围与移交标准。</li>
+      <li><b>首年收入：</b>环卫 2027-07-01 进场，首年服务费按实际月份折算，须与采购人确认计价方式。</li>
+      <li><b>回款条款：</b>季度 90% 进度款、10% 年终送审价款的支付时限、送审周期及逾期责任。</li>
+      <li><b>人员口径：</b>463 人是否含管理及外包人员，点核方式、缺员扣款标准。</li>
+      <li><b>车辆配置：</b>526 部的自有/租赁比例、规格、车龄及新能源要求。</li>
+      <li><b>联合体分工：</b>北水 53 人及市政、水体板块的责任边界、发票与回款路径。</li>
+      <li><b>报价复核：</b>较范围限价下浮约 18.3%，须复核人工、车辆租赁及考核扣款后的成本边界。</li>
+    </ul>
+  </div>
+  <div class="doc-section"><h3>八、招标文件下载</h3>
+    <p>招标文件原件共 ${(6.13).toFixed(2)} MB，含投标须知、评标办法、合同条款、工程量清单及技术规范；下载入口见本页首行工具栏。</p>
+  </div>`;
+}
+var DOC5={name:'投资测算（五个方案）',file:'files/plan2.xlsx',dl:'方案二（实际运营推迟-环卫27年7月1日进场）.xlsx'};
+function renderDoc5(){
+  var planNames=['方案一（实际运营配置）','方案二（环卫 2027-07-01 进场）','方案三（招标保洁员足额配置）','方案四（实际运营一年）','方案五（实际运营两年）'];
+  $('page-doc5').innerHTML = docTabs('doc5') + `
+  <div class="doc-toolbar"><span class="dt-name">${DOC5.name}</span><div class="dt-actions"><button class="doc-btn" onclick="window.print()">打印 / 导出 PDF</button><a class="doc-dl" href="${DOC5.file}" download="${DOC5.dl}">下载方案二（推荐）</a></div></div>
+  <div class="doc-meta">五个方案工作簿 · 含投资测算表、直接运行成本表、作业人员配置、车辆配置、折旧测算</div>
+  <div class="doc-section"><h3>一、方案文件下载</h3>
+    <div class="doc-list">
+      ${PLANS.map((p,i)=>`<div class="doc-row"><div><b>${planNames[i]}</b><div class="doc-sub">平均净利率 ${p.margin.toFixed(2)}% · 最低 ${p.min.toFixed(2)}% · IRR ${p.irr.toFixed(2)}% · 投资 ${money(p.invest)} 万元</div></div><a class="doc-dl" href="files/plan${i+1}.xlsx" download="${p.k.replace(/ /g,'')}.xlsx">下载原件</a></div>`).join('')}
+    </div>
+  </div>
+  <div class="doc-section"><h3>二、方案二（推荐）投资构成</h3>
+    <table><thead><tr><th class="l">项目</th><th>金额（万元）</th><th class="l">说明</th></tr></thead><tbody>
+      <tr><td class="l">新购及收购车辆设备</td><td>61.99</td><td class="l">占年服务费 3.05%，低于 30% 红线</td></tr>
+      <tr><td class="l">前期开办费</td><td>25.58</td><td class="l">办公家具、车辆及开办支出</td></tr>
+      <tr><td class="l">流动资金</td><td>322.61</td><td class="l">首年垫资及季度回款缺口</td></tr>
+      <tr class="total"><td class="l">合计</td><td>410.18</td><td class="l">占年服务费 20.2%</td></tr>
+    </tbody></table>
+  </div>`;
+}
+/* ============ 导航 ============ */
+var VIEWS=['dashboard','finance','staff','risks','conclusion','background','base','invest','ops','doc1','doc2','doc3'];
+var chartsDone={};
+function navigateTo(page, el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  $('page-'+page).classList.add('active');
+  document.querySelectorAll('.sidebar-nav .nav-item').forEach(n=>n.classList.remove('active'));
+  document.querySelectorAll('.sidebar-nav .nav-group').forEach(g=>g.classList.remove('has-active'));
+  if(el){ el.classList.add('active'); var g=el.closest('.nav-group'); if(g){g.classList.add('open');g.classList.add('has-active');} }
+  else if(['background','base','invest','ops'].indexOf(page)>=0){ var rv=$('navReview'); if(rv) rv.classList.add('active'); }
+  else if(['doc1','doc2','doc3'].indexOf(page)>=0){ var nd=$('navDoc'); if(nd) nd.classList.add('active'); }
+  $('pageTitle').textContent={dashboard:'数据看板',finance:'财务分析',staff:'人车配置',risks:'风险预警',conclusion:'评审结论',background:'评审信息 · 背景信息',base:'评审信息 · 基础信息',invest:'评审信息 · 投资信息',ops:'评审信息 · 运营信息',doc1:'上会资料 · 运营评审意见',doc2:'上会资料 · 投资测算表',doc3:'上会资料 · 招标文件',doc4:'上会资料 · 招标文件',doc5:'上会资料 · 投资测算（五方案）'}[page]||page;
+  $('sidebar').classList.remove('open');$('sidebarOverlay').classList.remove('open');
+  try{ window.scrollTo(0,0); }catch(e){}
+  if(page==='dashboard') setTimeout(()=>dashCharts(),40);
+  if(page==='finance') setTimeout(()=>finCharts(),40);
+  if(page==='staff') setTimeout(()=>staffCharts(),40);
+}
+function toggleGroup(h){h.parentElement.classList.toggle('open');}
+function toggleSidebar(){$('sidebar').classList.toggle('open');$('sidebarOverlay').classList.toggle('open');}
+
+/* ============ 图表 ============ */
+const GRID={color:'#eef2f7'};
+function bar(id,labels,data,colors,unit){
+  const el=$(id); if(!el||el._done)return; el._done=true;
+  new Chart(el,{type:'bar',data:{labels,datasets:[{data,backgroundColor:colors,borderRadius:6}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+money(c.parsed.y)+' '+(unit||'')}}},
+      scales:{y:{beginAtZero:true,grid:GRID,ticks:{callback:v=>v+(unit||'')},title:{display:!!unit,text:'单位：'+(unit||'').trim()}},
+        x:{grid:{display:false}}}}});
+}
+function doughnut(id,labels,data,colors,unit){
+  const el=$(id); if(!el||el._done)return; el._done=true;
+  const total=data.reduce((a,b)=>a+b,0);
+  new Chart(el,{type:'doughnut',data:{labels,datasets:[{data,backgroundColor:colors,borderWidth:2,borderColor:'#fff'}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{boxWidth:12,font:{size:11},generateLabels:ch=>ch.data.labels.map((l,i)=>({text:l+' '+money(ch.data.datasets[0].data[i])+(unit?' '+unit:''),fillStyle:ch.data.datasets[0].backgroundColor[i],strokeStyle:ch.data.datasets[0].backgroundColor[i],lineWidth:0,index:i,hidden:false}))}},tooltip:{callbacks:{label:c=>' '+c.label+': '+money(c.parsed)+' 万元（'+(total?c.parsed/total*100:0).toFixed(1)+'%）'}}}}});
+}
+function hbar(id,labels,data,colors,unit){
+  const el=$(id); if(!el||el._done)return; el._done=true;
+  const total=data.reduce((a,b)=>a+b,0);
+  new Chart(el,{type:'bar',data:{labels,datasets:[{data,backgroundColor:colors,borderRadius:5}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+money(c.parsed.x)+' '+(unit||'')+'（'+(total?c.parsed.x/total*100:0).toFixed(1)+'%）'}}},
+      scales:{x:{beginAtZero:true,grid:GRID,ticks:{callback:v=>v+(unit||'')},title:{display:true,text:'金额（'+(unit||'').trim()+'/年）'}},
+        y:{grid:{display:false},ticks:{font:{size:11}}}}}});
+}
+function yearsChart(id){
+  const el=$(id); if(!el||el._done)return; el._done=true;
+  new Chart(el,{data:{labels:YEARS.labels,datasets:[
+    {type:'bar',label:'业务收入（不含税）',data:YEARS.rev,backgroundColor:'#0891b2',borderRadius:6,yAxisID:'y'},
+    {type:'bar',label:'主营业务成本',data:YEARS.cost,backgroundColor:'#cbd5e1',borderRadius:6,yAxisID:'y'},
+    {type:'bar',label:'净利润',data:YEARS.net,backgroundColor:'#14b8a6',borderRadius:6,yAxisID:'y'},
+    {type:'line',label:'净利润率（右轴）',data:YEARS.margin,borderColor:'#dc2626',tension:.25,pointRadius:4,borderWidth:2.5,yAxisID:'y1'},
+    {type:'line',label:'集团要求 8%',data:[8,8,8],borderColor:'#f59e0b',borderDash:[6,4],pointRadius:0,borderWidth:2,yAxisID:'y1'},
+    {type:'line',label:'低效底线 6%',data:[6,6,6],borderColor:'#64748b',borderDash:[4,4],pointRadius:0,borderWidth:2,yAxisID:'y1'}
+  ]},options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}},tooltip:{callbacks:{label:c=>' '+c.dataset.label+': '+money(c.parsed.y)+(c.dataset.yAxisID==='y1'?' %':' 万元')}}},
+    scales:{y:{beginAtZero:true,grid:GRID,ticks:{callback:v=>v+' 万元'}},y1:{position:'right',min:0,max:12,grid:{display:false},ticks:{callback:v=>v+' %'}},x:{grid:{display:false}}}}});
+}
+function netChart(id){
+  const el=$(id); if(!el||el._done)return; el._done=true;
+  new Chart(el,{type:'bar',data:{labels:['招标要求','方案二测算'],datasets:[
+    {label:'人员数量',data:[463,322],backgroundColor:['#94a3b8','#0891b2'],borderRadius:5,barThickness:70}
+  ]},options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},datalabels:{anchor:'end',align:'top',color:'#334155',font:{weight:'700',size:11},formatter:v=>v+' 人'},tooltip:{callbacks:{label:c=>' '+c.parsed.y+' 人'}}},
+    scales:{y:{beginAtZero:true,grid:GRID,ticks:{callback:v=>v+' 人'}},x:{grid:{display:false}}}}});
+}
+function margin5Chart(id){
+  const el=$(id); if(!el||el._done)return; el._done=true;
+  new Chart(el,{type:'bar',data:{labels:PLANS.map(p=>p.k.split(' ')[0]),datasets:[
+    {label:'平均净利润率',data:PLANS.map(p=>p.margin),backgroundColor:'#0891b2',borderRadius:5},
+    {label:'最低（首年）',data:PLANS.map(p=>p.min),backgroundColor:'#f59e0b',borderRadius:5}
+  ]},options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}},tooltip:{callbacks:{label:c=>' '+c.dataset.label+': '+c.parsed.y.toFixed(2)+'%'}}},
+    scales:{y:{beginAtZero:true,grid:GRID,ticks:{callback:v=>v+'%'}},x:{grid:{display:false}}}}});
+}
+function planInvestChart(id){
+  const el=$(id); if(!el||el._done)return; el._done=true;
+  new Chart(el,{type:'bar',data:{labels:PLANS.map(p=>p.k.split(' ')[0]),datasets:[{data:PLANS.map(p=>p.invest),backgroundColor:PLANS.map(p=>p.tag?'#0d9488':'#94a3b8'),borderRadius:5}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+money(c.parsed.y)+' 万元'}}},
+      scales:{y:{beginAtZero:true,grid:GRID,ticks:{callback:v=>v+' 万'}},x:{grid:{display:false}}}}});
+}
+function staffChart(id){
+  const el=$(id); if(!el||el._done)return; el._done=true;
+  new Chart(el,{type:'bar',data:{labels:STAFF_SUMMARY.map(x=>x.k),datasets:[
+    {label:'招标要求',data:STAFF_SUMMARY.map(x=>x.a),backgroundColor:'#94a3b8',borderRadius:5},
+    {label:'方案二测算',data:STAFF_SUMMARY.map(x=>x.c),backgroundColor:'#0891b2',borderRadius:5}
+  ]},options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}},tooltip:{callbacks:{label:c=>' '+c.dataset.label+': '+c.parsed.y+' 人'}}},
+    scales:{y:{beginAtZero:true,grid:GRID,ticks:{callback:v=>v+' 人'}},x:{grid:{display:false}}}}});
+}
+function vehChart(id){
+  const el=$(id); if(!el||el._done)return; el._done=true;
+  new Chart(el,{type:'bar',data:{labels:VEH_SUMMARY.map(x=>x.k),datasets:[
+    {label:'招标最低',data:VEH_SUMMARY.map(x=>x.a),backgroundColor:'#94a3b8',borderRadius:5},
+    {label:'方案二测算',data:VEH_SUMMARY.map(x=>x.c),backgroundColor:'#0891b2',borderRadius:5}
+  ]},options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}},tooltip:{callbacks:{label:c=>' '+c.dataset.label+': '+c.parsed.y+' 部'}}},
+    scales:{y:{beginAtZero:true,grid:GRID,ticks:{callback:v=>v+' 部'}},x:{grid:{display:false}}}}});
+}
+function dashCharts(){
+  netChart('chNet');
+  vehChart('chVeh');
+  margin5Chart('chMargin5');
+  doughnut('chInvest',INVEST_BREAK.map(x=>x.k),INVEST_BREAK.map(x=>x.v),['#0d9488','#4f6ef7','#f59e0b']);
+}
+function finCharts(){}
+
+function staffCharts(){
+  var people=$('staffPanel-people'), vehicle=$('staffPanel-vehicle');
+  if(people&&people.classList.contains('active')){ staffChart('chStaff'); }
+  if(vehicle&&vehicle.classList.contains('active')){ vehChart('chVeh2'); }
+}
+/* ============ 初始化 ============ */
+renderDashboard();renderFinance();renderStaff();renderRisks();renderConclusion();
+renderBackground();renderBase();renderInvest();renderOps();renderDoc();renderDoc4();renderDoc5();
+dashCharts();
+
+</script>
+<script src="fin-extra.js"></script>
+<script>
+
+/* 下载护卫：拦截 files/ 链接，失败时给友好提示，避免浏览器直接打开 JSON 乱码 */
+(function(){
+  function toast(msg){
+    var t=document.getElementById('__dlToast');
+    if(!t){t=document.createElement('div');t.id='__dlToast';
+      t.style.cssText='position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:#0f172a;color:#fff;padding:10px 16px;border-radius:8px;font-size:13px;z-index:99999;box-shadow:0 8px 24px rgba(0,0,0,.25);max-width:70vw;line-height:1.5';
+      document.body.appendChild(t);}
+    t.textContent=msg;t.style.display='block';
+    clearTimeout(window.__dlT);window.__dlT=setTimeout(function(){t.style.display='none';},4200);
+  }
+  function saveBlob(b,dn){
+    var u=URL.createObjectURL(b),a=document.createElement('a');
+    a.href=u;a.download=dn;document.body.appendChild(a);a.click();
+    setTimeout(function(){URL.revokeObjectURL(u);if(a.parentNode)a.parentNode.removeChild(a);},3000);
+  }
+  function absFile(h){
+    if(!h||h.indexOf('files/')!==0)return h;
+    var p=location.pathname.replace(/\/index\.html$/,'').replace(/\/$/,'');
+    return p+'/'+h;
+  }
+  function fixFiles(){
+    [].forEach.call(document.querySelectorAll('a[href^="files/"]'),function(a){var h=a.getAttribute('href');if(h&&h.indexOf('files/')===0){a.setAttribute('href',absFile(h));}});
+    [].forEach.call(document.querySelectorAll('img[src^="files/"]'),function(im){var s=im.getAttribute('src');if(s&&s.indexOf('files/')===0){im.setAttribute('src',absFile(s));}});
+  }
+  if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',fixFiles);}else{fixFiles();}
+  window.addEventListener('load',fixFiles);setTimeout(fixFiles,120);
+  document.addEventListener('click',function(ev){
+    var t=ev.target;
+    var a=(t&&t.closest)?t.closest('a[href]'):null;
+    if(!a)return;
+    var href=absFile(a.getAttribute('href')||'');
+    if(href.indexOf('files/')<0&&href.indexOf('/files/')<0)return;
+    ev.preventDefault();
+    var dn=a.getAttribute('download')||href.split('/').pop();
+    var cands=[href,href.replace(/^(\.\.\/)*files\//,'../files/'),'../'+href,'../../'+href];
+    var uniq=[];cands.forEach(function(c){if(uniq.indexOf(c)<0)uniq.push(c);});
+    (function next(i){
+      if(i>=uniq.length){toast('该原件未随页面发布，无法下载；请在「上会资料」中下载原件，或重新上传生成系统。');return;}
+      fetch(uniq[i],{cache:'no-store'}).then(function(r){
+        var ct=(r.headers.get('content-type')||'').toLowerCase();
+        if(!r.ok||ct.indexOf('json')>=0||ct.indexOf('html')>=0)throw new Error('bad');
+        return r.blob();
+      }).then(function(b){
+        if(!b||(b.type||'').indexOf('json')>=0)throw new Error('bad');
+        saveBlob(b,dn);
+      }).catch(function(){next(i+1);});
+    })(0);
+  },true);
+})();
+
+</script>
+</body>
+</html>

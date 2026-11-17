@@ -1,0 +1,1290 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>湖州仁皇片区城市大管家项目 · 投资评审系统</title>
+<script src="../chart.min.js"></script>
+<script src="../chart-labels.js"></script>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --primary:#0891b2;--primary-dark:#0e7490;--accent:#4f6ef7;--bg:#f1f5f9;--card:#fff;
+  --text:#1e293b;--text-secondary:#64748b;--border:#e5e7eb;--danger:#dc2626;--warn:#d97706;--ok:#059669;
+  --sidebar-w:240px;--header-h:60px;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text)}
+.app-layout{display:none;min-height:100vh}
+.app-layout.active{display:flex}
+/* ===== Sidebar ===== */
+.sidebar{width:var(--sidebar-w);background:#12303a;color:#fff;position:fixed;top:0;left:0;bottom:0;z-index:100;transition:transform .3s;display:flex;flex-direction:column}
+.sidebar-header{padding:16px 20px;border-bottom:1px solid rgba(255,255,255,.1);display:flex;align-items:center;gap:12px}
+.sidebar-header .logo-icon{font-size:1.6rem}
+.sidebar-header h2{font-size:.95rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sidebar-nav{flex:1;padding:12px 0;overflow-y:auto}
+.sidebar-nav .nav-item{display:flex;align-items:center;gap:12px;padding:11px 20px;color:rgba(255,255,255,.7);cursor:pointer;transition:all .2s;font-size:.92rem;border-left:3px solid transparent}
+.sidebar-nav .nav-item:hover{background:rgba(255,255,255,.06);color:#fff}
+.sidebar-nav .nav-item.active{background:rgba(8,145,178,.3);color:#fff;border-left-color:var(--primary)}
+.sidebar-nav .nav-item .nav-icon{font-size:1.15rem;width:22px;text-align:center}
+.sidebar-nav .nav-section{padding:8px 20px 4px;font-size:.72rem;text-transform:uppercase;color:rgba(255,255,255,.35);letter-spacing:.5px}
+.sidebar-nav .nav-group{margin:1px 0}
+.sidebar-nav .nav-group-header{display:flex;align-items:center;gap:12px;padding:11px 20px;color:rgba(255,255,255,.7);cursor:pointer;transition:all .2s;font-size:.92rem;border-left:3px solid transparent;user-select:none}
+.sidebar-nav .nav-group-header:hover{background:rgba(255,255,255,.06);color:#fff}
+.sidebar-nav .nav-group-header .nav-icon{font-size:1.15rem;width:22px;text-align:center}
+.sidebar-nav .nav-group-header .chev{margin-left:auto;font-size:.7rem;transition:transform .25s;opacity:.7}
+.sidebar-nav .nav-group.open .nav-group-header{color:#fff}
+.sidebar-nav .nav-group.open .nav-group-header .chev{transform:rotate(90deg)}
+.sidebar-nav .nav-group.has-active .nav-group-header{color:#fff;border-left-color:var(--primary)}
+.sidebar-nav .nav-sub{max-height:0;overflow:hidden;transition:max-height .28s ease}
+.sidebar-nav .nav-group.open .nav-sub{max-height:420px}
+.sidebar-nav .nav-sub .nav-item{padding-left:54px;font-size:.88rem}
+.sidebar-footer{padding:14px 20px;border-top:1px solid rgba(255,255,255,.1)}
+.sidebar-footer .tag{font-size:.72rem;color:rgba(255,255,255,.55);text-align:center}
+/* ===== Main ===== */
+.main-content{margin-left:var(--sidebar-w);flex:1;min-width:0;min-height:100vh;display:flex;flex-direction:column}
+.topbar{height:var(--header-h);background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px;padding:0 24px;position:sticky;top:0;z-index:50}
+.topbar .menu-btn{display:none;font-size:1.4rem;cursor:pointer;background:none;border:none;color:var(--text)}
+.topbar h1{font-size:1.15rem;font-weight:700}
+.topbar .status-pill{margin-left:auto;font-size:.78rem;font-weight:600;padding:5px 14px;border-radius:16px;background:#fef3c7;color:#b45309;border:1px solid #fde68a}
+.content{padding:24px;flex:1}
+.page{display:none;animation:fade .3s}
+.page.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+/* ===== Cards / KPI ===== */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:22px}
+.kpi-grid.k4{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media(max-width:1200px){.kpi-grid.k4{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:760px){.kpi-grid.k4{grid-template-columns:1fr}}
+.kpi{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px 20px;box-shadow:0 4px 14px rgba(15,23,42,.05)}
+.kpi .label{font-size:.8rem;color:var(--text-secondary)}
+.kpi .value{font-size:1.6rem;font-weight:800;margin-top:6px}
+.kpi .unit{font-size:.85rem;color:var(--text-secondary);font-weight:600;margin-left:3px}
+.kpi .note{font-size:.72rem;margin-top:5px;color:var(--text-secondary)}
+.kpi.warn .value{color:var(--warn)}
+.kpi.danger .value{color:var(--danger)}
+.kpi.ok .value{color:var(--ok)}
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;box-shadow:0 4px 14px rgba(15,23,42,.05);margin-bottom:20px;overflow:hidden}
+.card-header{padding:15px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.card-header h3{font-size:1rem;font-weight:700}
+.card-header .badge{font-size:.72rem;padding:3px 10px;border-radius:12px;background:#ecfeff;color:var(--primary-dark);border:1px solid #a5f3fc;margin-left:auto}
+.card-body{padding:20px}
+.chart-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px;margin-bottom:20px}
+.chart-box{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;box-shadow:0 4px 14px rgba(15,23,42,.05)}
+.chart-box h4{font-size:.92rem;margin-bottom:14px;color:var(--text)}
+.chart-box .cv{position:relative;height:240px}
+/* ===== Tables ===== */
+table{width:100%;border-collapse:collapse;font-size:.86rem}
+th,td{padding:10px 12px;text-align:center;border-bottom:1px solid var(--border)}
+th{background:#f8fafc;color:var(--text-secondary);font-weight:600;font-size:.8rem}
+td.l,th.l{text-align:left}
+tr.subtotal{background:#f1f5f9;font-weight:700}
+tr.total{background:#ecfeff;font-weight:800}
+.tag-diff{display:inline-block;min-width:34px;padding:2px 8px;border-radius:10px;font-size:.78rem;font-weight:700}
+.tag-diff.neg{background:#fee2e2;color:#b91c1c}
+.tag-diff.pos{background:#dcfce7;color:#15803d}
+.tag-diff.zero{background:#f1f5f9;color:#94a3b8}
+.tag{display:inline-block;padding:2px 9px;border-radius:10px;font-size:.75rem;font-weight:700}
+.tag.ok{background:#dcfce7;color:#15803d}.tag.warn{background:#fef3c7;color:#b45309}.tag.bad{background:#fee2e2;color:#b91c1c}.tag.info{background:#dbeafe;color:#1d4ed8}
+.neg{color:#b91c1c}
+.pos{color:#15803d}
+/* ===== Info list ===== */
+.info-list{display:flex;flex-direction:column;gap:0}
+.info-item{padding:14px 0;border-bottom:1px dashed var(--border);display:grid;grid-template-columns:130px 1fr;gap:16px}
+.info-item:last-child{border-bottom:none}
+.info-item .k{font-weight:700;color:var(--primary-dark);font-size:.9rem}
+.info-item .v{color:var(--text);line-height:1.75;font-size:.9rem}
+.info-item .v p{margin:4px 0}
+/* ===== Tabs ===== */
+.tabs{display:flex;flex-wrap:wrap;gap:8px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:6px;margin-bottom:20px;box-shadow:0 4px 14px rgba(15,23,42,.04)}
+.tab{border:none;background:transparent;color:var(--text-secondary);font-family:inherit;font-size:.88rem;font-weight:600;padding:9px 18px;border-radius:8px;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:7px;white-space:nowrap}
+.tab:hover{background:#f1f5f9;color:var(--text)}
+.tab.active{background:var(--primary);color:#fff;box-shadow:0 2px 8px rgba(8,145,178,.28)}
+.tab-count{font-size:.72rem;font-weight:700;padding:1px 7px;border-radius:9px;background:#f1f5f9;color:var(--text-secondary)}
+.tab.active .tab-count{background:rgba(255,255,255,.22);color:#fff}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+.veh-compare{display:grid;grid-template-columns:1fr;gap:18px;align-items:start}
+.veh-compare .tbl-scroll table{font-size:.84rem}
+.veh-compare .tbl-scroll th,.veh-compare .tbl-scroll td{padding:9px 10px}
+.subtabs{display:flex;width:fit-content;align-items:center;gap:6px;margin:0 0 18px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:5px;box-shadow:0 4px 14px rgba(15,23,42,.04)}
+.subtab{border:none;background:transparent;color:var(--text-secondary);font-family:inherit;font-size:.84rem;font-weight:600;padding:8px 16px;border-radius:7px;cursor:pointer;transition:all .2s;white-space:nowrap}
+.subtab:hover{background:#f1f5f9;color:var(--text)}
+.subtab.active{background:#e0f2fe;color:var(--primary-dark);box-shadow:inset 0 0 0 1px #bae6fd}
+.veh-subpanel{display:none}
+.veh-subpanel.active{display:block}
+.sub-h{font-size:.88rem;margin:10px 0}
+@media(max-width:1000px){.veh-compare{grid-template-columns:1fr;gap:18px}}
+@media(max-width:760px){.tabs{gap:6px;padding:5px}.tab{flex:1 0 auto;justify-content:center;padding:8px 10px;font-size:.82rem}.subtabs{width:100%;justify-content:space-between}.subtab{flex:1;text-align:center;padding:8px 4px}}
+/* ===== Risk ===== */
+.risk-item{border:1px solid var(--border);border-left-width:4px;border-radius:12px;padding:16px 18px;margin-bottom:14px;background:#fff}
+.risk-item.mid{border-left-color:var(--warn)}
+.risk-item.low{border-left-color:#94a3b8}
+.risk-item.high{border-left-color:var(--danger)}
+.risk-head{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.risk-level{font-size:.72rem;font-weight:700;padding:3px 10px;border-radius:10px}
+.risk-level.mid{background:#fef3c7;color:#b45309}
+.risk-level.low{background:#f1f5f9;color:#64748b}
+.risk-level.high{background:#fee2e2;color:#b91c1c}
+.risk-title{font-weight:700;font-size:.95rem}
+.risk-desc{font-size:.86rem;color:var(--text-secondary);line-height:1.75}
+.empty-state{padding:38px 20px;text-align:center;border:1px dashed var(--border);border-radius:14px;background:#fff;color:var(--text-secondary)}
+.empty-state .es-title{font-weight:700;color:var(--text);font-size:.95rem;margin-bottom:6px}
+.empty-state .es-sub{font-size:.84rem;line-height:1.7}
+/* ===== Conclusion ===== */
+.concl-box{background:linear-gradient(135deg,#ecfeff,#f0f9ff);border:1px solid #a5f3fc;border-radius:14px;padding:22px;margin-bottom:20px}
+.concl-box .big{font-size:1.05rem;font-weight:700;color:var(--primary-dark);line-height:1.7}
+.steps{counter-reset:s;margin-top:6px}
+.step{position:relative;padding:12px 14px 12px 48px;border-bottom:1px dashed var(--border);font-size:.9rem;line-height:1.6}
+.step:last-child{border-bottom:none}
+.step::before{counter-increment:s;content:counter(s);position:absolute;left:12px;top:12px;width:26px;height:26px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:.82rem;font-weight:700}
+/* ===== Doc viewer ===== */
+.doc-toolbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:#fff;border:1px solid var(--border);border-radius:12px;padding:12px 16px;margin-bottom:16px}
+.doc-toolbar .dt-name{font-weight:700;font-size:.95rem}
+.doc-toolbar .dt-nav{display:flex;align-items:center;gap:8px;margin-left:auto}
+.doc-btn{border:1px solid var(--border);background:#f8fafc;color:var(--text);border-radius:8px;padding:7px 14px;font-size:.85rem;cursor:pointer;font-family:inherit;transition:all .2s}
+.doc-btn:hover:not(:disabled){background:var(--primary);color:#fff;border-color:var(--primary)}
+.doc-btn:disabled{opacity:.4;cursor:not-allowed}
+.doc-page-ind{font-size:.85rem;font-weight:600;min-width:70px;text-align:center}
+.doc-dl{font-size:.82rem;color:#fff;background:var(--primary);border:1px solid var(--primary);padding:7px 14px;border-radius:8px;font-weight:600;text-decoration:none}
+.pdf-single{background:#475569;border-radius:12px;padding:18px;display:flex;justify-content:center;align-items:flex-start;overflow:auto;max-height:78vh}
+.pdf-single img{flex:none;max-width:100%;height:auto;border-radius:6px;box-shadow:0 8px 30px rgba(0,0,0,.35);background:#fff}
+.doc-meta{font-size:.82rem;color:var(--text-secondary);margin-bottom:14px;line-height:1.6}
+@media(max-width:900px){
+  .sidebar{transform:translateX(-100%)}
+  .sidebar.open{transform:translateX(0)}
+  .sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:99}
+  .sidebar-overlay.open{display:block}
+  .main-content{margin-left:0}
+  .topbar .menu-btn{display:block}
+  .info-item{grid-template-columns:1fr;gap:4px}
+}
+
+/* ===== 上会资料（参照京良路文档布局） ===== */
+.doc-toolbar .dt-actions{display:flex;align-items:center;gap:8px;margin-left:auto;flex-wrap:wrap}
+.doc-btn{text-decoration:none}
+.doc-section{background:#fff;border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:18px;box-shadow:0 4px 14px rgba(15,23,42,.04)}
+.doc-section h3{font-size:1rem;color:var(--primary-dark);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+.doc-section h4{font-size:.92rem;margin:14px 0 8px;color:var(--text)}
+.doc-section table{min-width:640px}
+.doc-section p{font-size:.88rem;line-height:1.85;color:var(--text-secondary);margin:8px 0}
+.doc-section ul{margin:6px 0 6px 20px;font-size:.88rem;line-height:1.85;color:var(--text-secondary)}
+.doc-note{background:#f8fafc;border-left:3px solid var(--primary);padding:10px 14px;border-radius:0 8px 8px 0;font-size:.84rem;line-height:1.7;color:var(--text-secondary);margin:10px 0}
+.doc-note.warn{background:#fffbeb;border-left-color:var(--warn)}
+.sheet-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:10px}
+.sheet-item{display:flex;gap:11px;align-items:flex-start;padding:12px 14px;border:1px solid var(--border);border-radius:10px;background:#f8fafc}
+.sheet-item .sn{flex:none;width:28px;height:28px;border-radius:8px;background:#ecfeff;color:var(--primary-dark);display:flex;align-items:center;justify-content:center;font-size:.76rem;font-weight:800}
+.sheet-item b{font-size:.86rem;line-height:1.5}
+.sheet-item .sd{display:block;font-size:.78rem;color:var(--text-secondary);line-height:1.6;margin-top:2px}
+.reply-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+.reply{border:1px solid var(--border);border-radius:10px;padding:12px 14px;font-size:.84rem;line-height:1.75;color:var(--text-secondary);background:#fff}
+.reply b{display:block;color:var(--text);margin-bottom:4px;font-size:.82rem}
+.reply.invest{border-left:3px solid #3b82f6;background:#f8fbff}
+.reply.op{border-left:3px solid #f59e0b;background:#fffdf5}
+@media(max-width:900px){.reply-grid{grid-template-columns:1fr}}
+/* ===== 数据看板 / 财务 / 人车 新增组件 ===== */
+.grid{display:grid;gap:16px}
+.grid>*{min-width:0}
+.grid.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.grid.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.grid.g4{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media(max-width:1200px){.grid.g4{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:760px){.grid.g2,.grid.g3,.grid.g4{grid-template-columns:1fr}}
+.cash-layout{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:18px;align-items:stretch}
+.cash-layout .kpi-grid{margin:0;height:100%;grid-template-columns:1fr;grid-template-rows:repeat(4,minmax(0,1fr));gap:12px}
+.cash-layout .kpi{padding:14px 18px;display:flex;flex-direction:column;justify-content:center}
+@media(max-width:980px){.cash-layout{grid-template-columns:1fr}.cash-layout .kpi-grid{height:auto;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:auto}}
+@media(max-width:560px){.cash-layout .kpi-grid{grid-template-columns:1fr}}
+.tbl-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.tbl-scroll table{min-width:720px}
+.tbl-scroll.narrow table{min-width:520px}
+.tbl-scroll table th:first-child,.tbl-scroll table td:first-child{white-space:nowrap}
+.tbl-scroll.narrow table th{white-space:nowrap}
+th.n,td.n{text-align:right;font-variant-numeric:tabular-nums}
+th.c,td.c{text-align:center}
+.sec-note{font-size:.8rem;color:var(--text-secondary);line-height:1.75;margin-top:10px}
+.pill{display:inline-block;font-size:.64rem;font-weight:700;padding:1px 6px;border-radius:8px;margin-left:4px;white-space:nowrap}
+.pill.warn{background:#fef3c7;color:#b45309}
+.pill.bad{background:#fee2e2;color:#b91c1c}
+.pill.ok{background:#dcfce7;color:#15803d}
+.bench{margin-top:26px}
+.bench:first-child{margin-top:4px}
+.bench .bt{font-size:.8rem;color:var(--text-secondary);margin-bottom:17px;font-weight:600}
+.bench .bar{position:relative;height:24px;background:#eef2f7;border-radius:7px}
+.bench .fill{height:100%;border-radius:7px;position:relative;min-width:2px}
+.bench .cap{position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:.7rem;font-weight:800;color:#fff;white-space:nowrap;z-index:3;text-shadow:0 1px 2px rgba(0,0,0,.25)}
+.bench .mk{position:absolute;top:-6px;bottom:-6px;width:2px;background:#334155;z-index:2}
+.bench .mk span{position:absolute;bottom:calc(100% + 5px);left:50%;transform:translateX(-50%);font-size:.64rem;font-weight:700;color:#334155;white-space:nowrap}
+.bench-scale{display:flex;justify-content:space-between;font-size:.64rem;color:#94a3b8;margin-top:5px}
+.kv{display:grid;grid-template-columns:76px 1fr;gap:9px 12px;font-size:.85rem;line-height:1.75}
+.kv dt{font-weight:700;color:var(--primary-dark)}
+.kv dd{color:var(--text-secondary)}
+.cv{position:relative}
+.cv.mid{height:280px}
+.cv.tall{height:300px}
+.cv.xl{height:380px}
+@media print{.sidebar,.sidebar-overlay,.topbar,.doc-toolbar{display:none!important}.main-content{margin:0!important}.content{padding:0!important}.doc-section{box-shadow:none;break-inside:avoid}}
+</style>
+</head>
+<body>
+<div class="app-layout active" id="appLayout">
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header"><span class="logo-icon">&#127961;</span><h2>湖州仁皇·城市大管家</h2></div>
+    <nav class="sidebar-nav">
+      <div class="nav-section">主菜单</div>
+      <div class="nav-item active" onclick="navigateTo('dashboard',this)"><span class="nav-icon">&#128202;</span> 数据看板</div>
+      <div class="nav-item" onclick="navigateTo('finance',this)"><span class="nav-icon">&#128176;</span> 财务分析</div>
+      <div class="nav-item" onclick="navigateTo('staff',this)"><span class="nav-icon">&#128101;</span> 人车配置</div>
+      <div class="nav-item" onclick="navigateTo('risks',this)"><span class="nav-icon">&#9888;&#65039;</span> 风险预警</div>
+      <div class="nav-item" onclick="navigateTo('conclusion',this)"><span class="nav-icon">&#9989;</span> 评审结论</div>
+      <div class="nav-item" id="navReview" onclick="navigateTo('background',this)"><span class="nav-icon">&#128194;</span> 评审信息</div>
+      <div class="nav-item" id="navDoc" onclick="navigateTo('doc1',this)"><span class="nav-icon">&#128203;</span> 上会资料</div>
+    </nav>
+    <div class="sidebar-footer"><div class="tag">北控城市环境服务集团 · 内部评审</div></div>
+  </aside>
+
+  <div class="main-content">
+    <div class="topbar">
+      <button class="menu-btn" onclick="toggleSidebar()">&#9776;</button>
+      <h1 id="pageTitle">数据看板</h1>
+      <span class="status-pill">已中标 · 实际开标 2026-10-27</span>
+    </div>
+    <div class="content">
+      <div class="page active" id="page-dashboard"></div>
+      <div class="page" id="page-finance"></div>
+      <div class="page" id="page-staff"></div>
+      <div class="page" id="page-risks"></div>
+      <div class="page" id="page-conclusion"></div>
+      <div class="page" id="page-background"></div>
+      <div class="page" id="page-base"></div>
+      <div class="page" id="page-invest"></div>
+      <div class="page" id="page-ops"></div>
+      <div class="page" id="page-doc1"></div>
+      <div class="page" id="page-doc2"></div>
+      <div class="page" id="page-doc3"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============ 数据（源自 投资评审报告 + 运营评审意见） ============ */
+const FIN = {
+  revTax:2146.93, revNoTax:2025.41, avgProfit:122.07, avgMargin:6.04, minMargin:5.59,
+  irr:35.72, irrEquity:317.07, svcYear:2358.52, cap:2407.2, invest:345.41, investRatio:14.65,
+  devInvest:172.11, devRatio:7.3, prepFee:108.26, prepRatio:1.68
+};
+const INVEST_BREAK = [
+  {k:'流动资金', v:160.92},
+  {k:'新购及收购车辆设备', v:140.18},
+  {k:'智慧环卫', v:31.93},
+  {k:'前期开办', v:12.38}
+];
+const SVC_BREAK = [
+  {k:'环卫作业', v:1100, term:'3年'},
+  {k:'绿化养护', v:692, term:'2.5年'},
+  {k:'市政维护', v:615.2, term:'2.5年'}
+];
+const ROUND = {prev:3054.6, cur:2407.2, diff:647.4, budgetDiff:811.8, areaAdd:66};
+/* 三年收益（不含税，万元） */
+const YEARS = {
+  labels:['2027（第1年）','2028（第2年）','2029（第3年）'],
+  rev:[1626.19,2225.02,2225.02],
+  cost:[1440.94,1979.20,2001.47],
+  tax:[0.94,64.95,64.95],
+  dep:[50.77,50.77,50.77],
+  taxIncome:[33.59,47.02,41.45],
+  net:[100.78,141.07,124.36],
+  margin:[6.20,6.34,5.59]
+};
+/* 年直接运行成本结构（万元/年，合计1,966.40） */
+const SEG_COST = [
+  {k:'道路清扫保洁', v:579.44, c:'#0891b2'},
+  {k:'市政（外包）', v:551.36, c:'#14b8a6'},
+  {k:'绿化', v:543.67, c:'#f59e0b'},
+  {k:'生活垃圾收运', v:285.58, c:'#4f6ef7'},
+  {k:'冬季除雪', v:6.36, c:'#dc2626'}
+];
+/* 成本科目（万元/年） */
+const COST_ITEMS = [
+  {k:'人工成本', v:833.08},
+  {k:'外包费用', v:656.96},
+  {k:'车辆租赁费', v:165.34},
+  {k:'燃油', v:164.30},
+  {k:'直接材料', v:50.00},
+  {k:'维修费', v:40.02},
+  {k:'人工消耗品', v:15.44},
+  {k:'车险年检', v:15.00},
+  {k:'工服劳保', v:9.92},
+  {k:'其它+GPS+用电', v:16.34}
+];
+/* 全投资现金流（税后，万元） */
+const CASH = {
+  labels:['第0期','2027','2028','2029'],
+  inflow:['—','1,723.76','2,358.52','2,580.38'],
+  outflow:['345.41','1,578.33','2,119.66','2,141.93'],
+  net:[-345.41,111.84,191.84,396.99],
+  cum:[-345.41,-233.58,-41.74,355.26]
+};
+/* 运营评审前后测算调整对照 */
+const ADJUST = [
+  ['平均净利润','161.17 万元','122.07 万元','neg','-39.10 万元'],
+  ['平均净利润率','8.07%','6.04%','neg','-2.03 个百分点（跌破集团 8% 要求）'],
+  ['最低（第三年）净利润率','7.67%','5.59%','neg','-2.08 个百分点（低于 6% 低效底线）'],
+  ['初期总投资','270.21 万元','345.41 万元','pos','+75.20 万元'],
+  ['新购及收购车辆设备','80.73 万元（占 3.45%）','140.18 万元＋智慧环卫 31.93 万元（占 7.3%）','zero','设备投入提升，仍低于 30% 红线'],
+  ['前期开办','25.58 万元','12.38 万元','pos','-13.20 万元'],
+  ['流动资金','163.90 万元','160.92 万元','pos','-2.98 万元'],
+  ['作业人员（在册测算）','169 人（对下限 -115）','156 人（对下限 -128；另外包 66，实际 222）','neg','在册缺口扩大 13 人'],
+  ['退场成本','8.55 万元','22.275 万元','zero','运营端认为仍偏低']
+];
+/* 租赁车辆清单（年租金合计165.34万元） */
+const RENT = [
+  ['8吨洗扫车',3,13.60,40.80,'环卫'],
+  ['8吨洒水车',3,5.40,16.20,'环卫'],
+  ['多功能养护车',2,3.60,7.20,'环卫'],
+  ['汽油两驱皮卡（6档手动）',1,2.40,2.40,'环卫'],
+  ['除油车',2,3.24,6.48,'环卫'],
+  ['新能源沿街垃圾车',2,4.50,9.00,'垃圾收运'],
+  ['15吨压缩车',2,9.60,19.20,'垃圾收运'],
+  ['18吨压缩车',3,10.80,32.40,'垃圾收运'],
+  ['15吨厨余垃圾收运车',1,10.80,10.80,'垃圾收运'],
+  ['5吨洒水车A',1,4.86,4.86,'绿化'],
+  ['高空作业车',1,4.80,4.80,'绿化'],
+  ['运输车＞4.5吨',1,4.00,4.00,'绿化'],
+  ['运输车＜4.5吨',2,3.00,6.00,'绿化']
+];
+/* 车辆汇总对比 */
+const VEH_SUMMARY = [
+  {k:'环卫车辆', a:17, c:17, note:'数量一致；8吨租赁车型低于招标≥15吨门槛'},
+  {k:'环卫设备', a:36, c:76, note:'多配40'},
+  {k:'绿化车辆', a:12, c:5, note:'少配7（洒水-1、登高-1、运输-3、巡查-2）'},
+  {k:'绿化设备', a:87, c:87, note:'数量一致'},
+  {k:'市政（外包）', a:13, c:0, note:'未配置，且整体外包需甲方书面同意'}
+];
+/* 保洁员人均作业面积（按实际作业面积593,638.67㎡，㎡/人·班） */
+const AREA = [
+  {k:'测算 62 人', v:9574.85, c:'#dc2626'},
+  {k:'按招标区间下限 72 人', v:8244.98, c:'#d97706'},
+  {k:'按服务费核定 85 人', v:6983.98, c:'#64748b'},
+  {k:'行业一般', v:10000, c:'#059669'}
+];
+// 人员配置：类别, 工种, 招标下限, 招标上限, 测算, 下限差, 上限差
+const STAFF = [
+  ['管理人员','项目经理',1,1,1,0,0],
+  ['管理人员','项目主管',3,3,3,0,0],
+  ['管理人员','专职安全员',3,5,4,1,-1],
+  ['管理人员','信息化管理员',2,2,0,-2,-2],
+  ['管理人员','小计',9,11,8,-1,-3],
+  ['环卫作业','保洁员',72,98,62,-10,-36],
+  ['环卫作业','驾驶员',21,21,20,-1,-1],
+  ['环卫作业','现场管理',2,2,2,0,0],
+  ['环卫作业','辅助工',0,0,8,8,8],
+  ['环卫作业','小计',95,121,92,-3,-29],
+  ['绿化维养','绿地养护人员',171,171,43,-128,-128],
+  ['绿化维养','驾驶员',0,0,4,4,4],
+  ['绿化维养','水电工',2,2,2,0,0],
+  ['绿化维养','保安',6,6,6,0,0],
+  ['绿化维养','小计',179,179,55,-124,-124],
+  ['道桥维养','专职人员',1,1,1,0,0],
+  ['合计','',284,312,156,-128,-156]
+];
+// 车辆设备：分组, 名称, 招标, 测算, 差值
+const VEH = {
+  hw_veh:['15吨水车|3|3|0','15吨机扫车|3|3|0','3吨道路养护车|2|2|0','15/18吨压缩车|5|5|0','15吨自卸车|1|1|0','2吨新能源沿街收集车|2|2|0','2.4吨轻型货车(皮卡车)|1|1|0'].map(s=>s.split('|')),
+  hw_dev:['3吨无人车|1|2|1','三轮电瓶快保车|30|29|-1','人力保洁车|0|31|31','油污冲洗车|2|2|0','小型扫地机|1|9|8','推雪板|1|1|0','撒布机|1|1|0','雪滚|0|1|1'].map(s=>s.split('|')),
+  lv:['洒水车|2|1|-1','登高车|2|1|-1','运输车>4.5吨|2|1|-1','运输车<4.5吨|4|2|-2','巡查车|2|0|-2','水泵|16|16|0','绿篱机|14|14|0','草坪机|12|12|0','割灌机|16|16|0','打药机|8|8|0','可伸缩高枝锯|12|12|0','油锯|9|9|0'].map(s=>s.split('|')),
+  sz:[['1','大型沥青铣刨机','铣刨宽度≥1米','≥1台'],['2','小型沥青铣刨机','铣刨宽度 0.5米','≥1台'],['3','沥青摊铺机','最小摊铺宽度≤2.5米','≥1台'],['4','沥青保温运输车（车辆）','储料仓 4-6 立方米','≥1台'],['5','沥青废料清扫机','——','≥1台'],['6','双钢轮振动压路机','自重 10-13t','≥1台'],['7','轮胎压路机','自重 25-30t','≥1台'],['8','小型压路机','自重 3t-5t','≥1台'],['9','工程抢修车（车辆）','皮卡','≥1台'],['10','小型移动式发电机','10KW 及以上','≥2台'],['11','小型平板夯','——','≥2台'],['12','合计','——','≥13台']]
+};
+const RISKS = [
+  {lv:'high',t:'劳务外包与分包安排不符合招标约束',d:'招标明确项目履约期内不得采用劳务外包，主体部分不得分包，其他部分分包须经甲方书面同意。测算将绿化66名养护工按劳务外包配置，并拟将市政业务整体外包；若按现方案实施，存在响应无效、整改退场及考核扣款风险。须改为自有人员配置，或仅就非主体业务取得甲方书面同意后分包。'},
+  {lv:'mid',t:'利润率偏低',d:'调整后平均净利润率 6.04% 低于集团一般要求 8%，略高于低效项目最低 6%；最低（第三年）净利润率 5.59%，低于集团 8% 及低效项目最低 6% 标准。存在实际运营净利率跌破 6% 及被上级考核处罚的风险。'},
+  {lv:'mid',t:'成本控制风险',d:'本轮年服务费总额及单价大幅下降，对比上轮按总价预算减少 811.8 万元、按中标价对比本轮限价年化减少 647.4 万元，人工及作业成本管控压力大；台风、雨雪、旱涝、冰冻等重大自然灾害投入均含在报价中，存在成本超支风险。'},
+  {lv:'mid',t:'作业边界数据不充分',d:'招标服务区域以附图为准，文本未载明具体边界；清扫保洁无道路明细、绿化面积为暂估（需中标后委托第三方测量）、道桥设施清单由甲方中标后提供且服务期内可调整。尽调数据未实地测量清点，无法判断准确性或差异。'},
+  {lv:'mid',t:'一线人员配置不足、被动增加人工成本',d:'在册156人为招标下限284人的54.9%；计入绿化劳务外包66人后实际投入222人，仍仅为招标下限的78.2%。需接收符合岗位要求的一线环卫人员，一年内不得无故解聘、薪酬不低于原标准；不掌握现作业人员数量与结构，是否冗员无判断依据。'},
+  {lv:'mid',t:'保洁员低于招标下限且服务费按85人核定',d:'测算保洁员62人，低于招标服务费核定人数85人及区间下限72人。按实际作业面积593,638.67㎡计，人均约9,574.85㎡/人·班，按72人为8,244.98㎡；若以道路总面积作分母会虚增至28,724.45㎡，不能用于判断人工强度。'},
+  {lv:'mid',t:'垃圾物流模式不合理',d:'15/18吨压缩车无法对接中小型转运站、单次往返30公里测算里程不对；新能源沿街垃圾车每日180公里、15吨厨余车每日160公里不合理（拥堵狭窄频繁装卸一般日不超100公里）。'},
+  {lv:'mid',t:'年度后期垫资风险',d:'招标付款并非每年预付5个月：2027年合同生效后预付不超过40%，2028年首期累计不超过23%，之后按4月、7月、10月末累计节点支付。尽调期间业主反馈2026年以来存在2—3个月延期支付，实际按财政资金到位逐月支付，回款节奏不确定。'},
+  {lv:'mid',t:'合作方式存不确定性',d:'与联合体成员的合作方式尚未落实具体协议，实际收益水平存在不确定性。'},
+  {lv:'low',t:'合同签订时间不一致',d:'绿化维养及道桥维养合同签订日与环卫作业部分不一致，服务期内若环卫不能续签，业务到期日不同步。'},
+  {lv:'low',t:'政策影响无法续签、工作量调整自担损失',d:'因财政政策、预算、职能调整导致服务内容调整的，采购人有权终止续签；工作内容/工作量调整时中标供应商应无条件响应并自行承担损失。'},
+  {lv:'low',t:'非劳动政策强制要求增加人工成本',d:'对达法定退休年龄且缴费不足的环卫工人可继续缴费至满年限享受养老待遇，需防范不必要的人工成本增加。'},
+  {lv:'low',t:'甲方单方调整考核标准风险',d:'采购人可结合"城市大管家"统筹管理需要出台/修订专项考核办法，相关风险全部包含在投标报价内，建议以调价机制预防。'}
+];
+const CONCL = {
+  head:'如中标，按决策要求落实后履行合同审批、开展投资运营。',
+  items:[
+    '补足边界信息以及人员接收信息；',
+    '明确有利于我方及时收回服务费的保障机制；',
+    '按评审条件落实合作方式及业务分配具体方案，补充相关协议；',
+    '若合作条件发生变化、实际边界与招标存在差异对收益产生较大影响，需修订投资测算后进行合同审批或重新决策。'
+  ]
+};
+
+/* ============ 渲染 ============ */
+const $=id=>document.getElementById(id);
+function money(n){return n.toLocaleString('zh-CN',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function diffTag(v){const n=Number(v);const cls=n<0?'neg':(n>0?'pos':'zero');const s=n>0?'+'+n:''+n;return '<span class="tag-diff '+cls+'">'+s+'</span>';}
+function pct(n){return Number(n).toFixed(2)+'%';}
+function rateTag(v,good,low){return '<span class="tag '+(v>=good?'ok':(v>=low?'warn':'bad'))+'">'+pct(v)+'</span>';}
+
+function benchHTML(){
+  return `<div class="card"><div class="card-header"><h3>收益率对标：与集团标准的关系</h3><span class="badge">集团要求 8% · 低效底线 6%</span></div><div class="card-body">
+    <div class="bench">
+      <div class="bt">平均净利润率 6.04%（刻度 0–10%）</div>
+      <div class="bar">
+        <div class="fill" style="width:60.4%;background:#d97706"></div>
+        <div class="mk" style="left:60%"><span>低效底线 6%</span></div>
+        <div class="mk" style="left:80%"><span>集团要求 8%</span></div>
+      </div>
+    </div>
+    <div class="bench">
+      <div class="bt">最低净利润率（第三年）5.59%</div>
+      <div class="bar">
+        <div class="fill" style="width:55.9%;background:#dc2626"></div>
+        <div class="mk" style="left:60%"><span>低效底线 6%</span></div>
+        <div class="mk" style="left:80%"><span>集团要求 8%</span></div>
+      </div>
+    </div>
+    <p class="sec-note">运营评审调整前平均净利润率曾为 8.07%（最低 7.67%）；投资端修改测算后降为 6.04%（最低 5.59%），已跌破集团一般要求 8% 与低效项目 6% 底线，存在实际运营中被上级考核处罚的风险。</p>
+  </div></div>`;
+}
+function keyElementsHTML(){
+  const items = [
+    ['环卫作业（含道路保洁）','178.09',' 万㎡','板块限价年化 1,100 万元 · 服务费按85人核定（72–98人浮动）'],
+    ['生活垃圾清运','79',' 吨/天','招标单价限价 137.28 元/吨·天 · 年约 28,835 吨'],
+    ['绿地养护（暂估）','170',' 万㎡','限价年化 692 万元 · 2.5 年 · 4.07 元/㎡·年'],
+    ['市政道桥维养','39 路 / 65 桥','','限价年化 615.2 万元 · 2.5 年 · 折扣报价≤95%'],
+    ['行道树 / 公园','8,586 株 / 12.2 万㎡','','现场尽调数据'],
+    ['作业人员','222',' 人','在册156人（含市政外包1人）＋绿化劳务外包66人；招标下限284人，且明确不得劳务外包'],
+    ['车辆设备','185 / 165',' 部','机动车22/31（绿化车辆-7、市政车辆未配置），环卫设备多配40部、市政13部未配置；租赁24辆中大型车（年租金165.34万元）'],
+    ['前期开荒费','108.26',' 万元','占三年含税收入6,440.79万元的1.68%，与续签回款挂钩']
+  ];
+  return `<div class="card"><div class="card-header"><h3>项目关键要素速览</h3></div><div class="card-body"><div class="grid g4">
+    ${items.map(it=>`<div><div style="font-size:12.5px;color:var(--text-secondary)">${it[0]}</div><b style="font-size:19px;color:var(--primary-dark);display:block;margin:3px 0 2px">${it[1]}<span style="font-size:12px;font-weight:600">${it[2]}</span></b><div style="font-size:12px;color:var(--text-secondary);line-height:1.6">${it[3]}</div></div>`).join('')}
+  </div></div></div>`;
+}
+function renderDashboard(){
+  $('page-dashboard').innerHTML = `
+  <div class="kpi-grid k4">
+    <div class="kpi"><div class="label">满年含税服务费（2028 年测算）</div><div class="value">2,358.52<span class="unit">万元/年</span></div><div class="note">三年平均含税收入 2,146.93 · 三板块限价年化 2,407.2</div></div>
+    <div class="kpi warn"><div class="label">平均净利润率</div><div class="value">6.04<span class="unit">%</span></div><div class="note">低于集团一般要求 8% <span class="pill warn">略高于低效底线 6%</span></div></div>
+    <div class="kpi danger"><div class="label">最低净利润率（第三年）</div><div class="value">5.59<span class="unit">%</span></div><div class="note">低于 8% 与低效项目 6% 双重标准 <span class="pill bad">未达标</span></div></div>
+    <div class="kpi ok"><div class="label">内部收益率（税后）</div><div class="value">35.72<span class="unit">%</span></div><div class="note">税前 47.44% · 资本金税后 317.07%</div></div>
+    <div class="kpi"><div class="label">平均净利润</div><div class="value">122.07<span class="unit">万元/年</span></div><div class="note">利润总额平均 162.76 · 三年净利合计 366.21</div></div>
+    <div class="kpi"><div class="label">初期总投资（含车辆设备）</div><div class="value">345.41<span class="unit">万元</span></div><div class="note">车辆设备140.18＋智慧环卫31.93＝172.11；占满年服务费7.3%、总投14.65% <span class="pill ok">均低于30%红线</span></div></div>
+    <div class="kpi danger"><div class="label">在册人员配置缺口</div><div class="value">-128<span class="unit">人</span></div><div class="note">在册156人 vs 招标下限284人；另绿化外包66人，实际投入222人仍少62人，且招标禁止劳务外包</div></div>
+    <div class="kpi danger"><div class="label">机动车实配</div><div class="value">22 / 31<span class="unit">部</span></div><div class="note">少 9 部：绿化车辆 5/12、市政车辆 0/2；环卫车辆 17/17。车辆设备总量 185/165，环卫设备多 40 部 <span class="pill bad">结构失衡</span></div></div>
+  </div>
+  ${benchHTML()}
+  <div class="chart-row">
+    <div class="chart-box"><h4>净利润率对比（%）</h4><div class="cv"><canvas id="chMargin"></canvas></div></div>
+    <div class="chart-box"><h4>初期总投资构成（345.41 万元）</h4><div class="cv"><canvas id="chInvest"></canvas></div></div>
+  </div>
+  <div class="chart-row">
+    <div class="chart-box"><h4>服务费构成（最高限价年化 · 万元/年）</h4><div class="cv"><canvas id="chSvc"></canvas></div></div>
+    <div class="chart-box"><h4>本轮限价年化 vs 上轮中标（万元/年）</h4><div class="cv"><canvas id="chRound"></canvas></div></div>
+  </div>
+  ${keyElementsHTML()}
+  <div class="card" style="margin-top:18px"><div class="card-header"><h3>本轮 vs 上轮 服务费变化</h3></div><div class="card-body">
+    <div class="tbl-scroll narrow"><table><thead><tr><th class="l">项目</th><th>湖州上一轮</th><th>湖州本轮</th><th>差异</th></tr></thead><tbody>
+      <tr><td class="l">合计服务费年化（万元）</td><td>${money(ROUND.prev)}</td><td>${money(ROUND.cur)}</td><td>${diffTag(-ROUND.diff)}</td></tr>
+      <tr><td class="l">环卫板块折算单价（含垃圾清运）</td><td>10.02 元/㎡</td><td>6.18 元/㎡</td><td>${diffTag(-3.84)}（-38.32%）</td></tr>
+      <tr><td class="l">绿化单价</td><td>4.42 元/㎡</td><td>4.07 元/㎡</td><td>${diffTag(-0.35)}（-7.92%）</td></tr>
+      <tr><td class="l">道桥维养（限价年化）</td><td>810 万元</td><td>615.2 万元</td><td>${diffTag(-194.8)}</td></tr>
+      <tr><td class="l">服务面积</td><td>—</td><td>—</td><td>增加 ${ROUND.areaAdd} 万㎡</td></tr>
+    </tbody></table></div>
+    <div class="doc-meta" style="margin-top:12px">对比上轮：按预算口径减少 ${money(ROUND.budgetDiff)} 万元，按上轮中标价对比本轮限价年化减少 ${money(ROUND.diff)} 万元。环卫板块折算单价为板块服务费÷道路面积，含垃圾清运；招标道路分项按面积加权限价约 3.96 元/㎡·年，两个口径不可直接混用。</div>
+  </div></div>`;
+}
+var FIN_TABS=[['years','三年收益与利润表'],['cost','成本结构及科目占比'],['cash','现金流与投资回收'],['adjust','评审前后调整对照']];
+function renderFinance(){
+  const avg=a=>a.reduce((s,v)=>s+v,0)/a.length;
+  $('page-finance').innerHTML = `
+  <div class="doc-meta" style="margin-bottom:14px">口径：初期总投资 345.41 万元；2028 满年含税服务费 2,358.52 万元，三年平均含税收入 2,146.93 万元；绿化、道桥维养按 2.5 年计入。利润表为不含税口径，金额单位万元。</div>
+  <div class="tabs" id="finTabs">${FIN_TABS.map(t=>`<button class="tab ${t[0]==='years'?'active':''}" onclick="switchFinTab('${t[0]}',this)">${t[1]}</button>`).join('')}</div>
+
+  <div class="tab-panel active" id="finPanel-years">
+  <div class="chart-box" style="margin-bottom:20px">
+    <h4>三年收益走势与净利润率（万元 / %）</h4>
+    <div class="cv tall"><canvas id="chYears2"></canvas></div>
+    <p class="sec-note">柱：业务收入（不含税）、主营业务成本、净利润；线：净利润率（右轴）。橙色虚线为集团要求 8%，灰色虚线为低效底线 6%；第三年净利润率 5.59% 已跌破两条底线。</p>
+  </div>
+
+  <div class="card" style="margin-top:18px"><div class="card-header"><h3>三年利润表</h3><span class="badge">单位：万元</span></div><div class="card-body">
+    <div class="tbl-scroll narrow"><table>
+      <thead><tr><th class="l">指标</th><th class="n">2027（第1年）</th><th class="n">2028（第2年）</th><th class="n">2029（第3年）</th><th class="n">三年平均</th></tr></thead>
+      <tbody>
+        <tr><td class="l">业务收入（不含税）</td>${YEARS.rev.map(v=>'<td class="n">'+money(v)+'</td>').join('')}<td class="n">${money(avg(YEARS.rev))}</td></tr>
+        <tr><td class="l">主营业务成本</td>${YEARS.cost.map(v=>'<td class="n">'+money(v)+'</td>').join('')}<td class="n">${money(avg(YEARS.cost))}</td></tr>
+        <tr><td class="l">税金及附加</td>${YEARS.tax.map(v=>'<td class="n">'+money(v)+'</td>').join('')}<td class="n">${money(avg(YEARS.tax))}</td></tr>
+        <tr><td class="l">折旧及摊销</td>${YEARS.dep.map(v=>'<td class="n">'+money(v)+'</td>').join('')}<td class="n">${money(avg(YEARS.dep))}</td></tr>
+        <tr><td class="l">利润总额</td>${YEARS.net.map(n=>'<td class="n">'+money(n/0.75)+'</td>').join('')}<td class="n">${money(FIN.avgProfit/0.75)}</td></tr>
+        <tr><td class="l">所得税</td>${YEARS.taxIncome.map(v=>'<td class="n">'+money(v)+'</td>').join('')}<td class="n">${money(avg(YEARS.taxIncome))}</td></tr>
+        <tr><td class="l">净利润</td>${YEARS.net.map(n=>'<td class="n">'+money(n)+'</td>').join('')}<td class="n">${money(FIN.avgProfit)}</td></tr>
+        <tr><td class="l">净利润率</td>${YEARS.margin.map(m=>'<td class="n">'+m.toFixed(2)+'%</td>').join('')}<td class="n">${FIN.avgMargin.toFixed(2)}%</td></tr>
+      </tbody>
+    </table></div>
+    <p class="sec-note">收入－成本－税金及附加－折旧摊销＝利润总额；所得税按 25% 税率计提，税后为净利润。末列为三年平均。三年净利润合计 ${money(YEARS.net.reduce((a,b)=>a+b,0))} 万元、利润总额合计 ${money(YEARS.net.reduce((a,b)=>a+b,0)/0.75)} 万元。</p>
+  </div></div>
+  </div>
+
+  <div class="tab-panel" id="finPanel-cost">
+  <div class="chart-row">
+    <div class="chart-box"><h4>年直接运行成本结构（按业务板块 · 万元/年）</h4><div class="cv tall"><canvas id="chCostSeg"></canvas></div><p class="sec-note">含税口径合计 1,966.40 万元/年；人工与外包合计占 75.8%。</p></div>
+    <div class="chart-box"><h4>成本科目占比（万元/年）</h4><div class="cv xl"><canvas id="chCostItems"></canvas></div><p class="sec-note">人工成本 833.08 万元（42.4%）与外包费用 656.96 万元（33.4%）是本轮单价下调后最主要的管控压力来源。</p></div>
+  </div>
+  </div>
+
+  <div class="tab-panel" id="finPanel-cash">
+  <div class="card"><div class="card-header"><h3>现金流与投资回收</h3><span class="badge">全投资 · 所得税后</span></div><div class="card-body">
+    <div class="cash-layout">
+      <div><h4 style="font-size:.86rem;margin-bottom:10px;color:var(--text-secondary)">净现金流与累计净现金流（万元）</h4><div class="cv" style="height:440px"><canvas id="chCash"></canvas></div></div>
+      <div class="kpi-grid">
+        <div class="kpi ok"><div class="label">项目内部收益率（税后）</div><div class="value">35.72<span class="unit">%</span></div><div class="note">税前 47.44%</div></div>
+        <div class="kpi ok"><div class="label">资本金内部收益率（税后）</div><div class="value">317.07<span class="unit">%</span></div><div class="note">税前 380.59%</div></div>
+        <div class="kpi"><div class="label">流动资金峰值</div><div class="value">221.86<span class="unit">万元</span></div><div class="note">期初 160.92，2028 年追加 60.94</div></div>
+        <div class="kpi warn"><div class="label">累计净现金流回正</div><div class="value">第3年<span class="unit">+355.26 万元</span></div><div class="note">2027 末 -233.58、2028 末 -41.74</div></div>
+      </div>
+    </div>
+    <div style="margin-top:18px">
+      <div class="tbl-scroll"><table>
+        <thead><tr><th class="l">全投资现金流量（税后）</th><th>第0期</th><th>2027</th><th>2028</th><th>2029</th></tr></thead>
+        <tbody>
+          <tr><td class="l">现金流入</td><td>${CASH.inflow[0]}</td><td>${CASH.inflow[1]}</td><td>${CASH.inflow[2]}</td><td>${CASH.inflow[3]}</td></tr>
+          <tr><td class="l">现金流出</td><td>${CASH.outflow[0]}</td><td>${CASH.outflow[1]}</td><td>${CASH.outflow[2]}</td><td>${CASH.outflow[3]}</td></tr>
+          <tr><td class="l">所得税</td><td>—</td>${YEARS.taxIncome.map(v=>'<td>'+money(v)+'</td>').join('')}</tr>
+          <tr><td class="l">所得税后净现金流量</td><td class="neg">-345.41</td><td>111.84</td><td>191.84</td><td>396.99</td></tr>
+          <tr class="total"><td class="l">所得税后累计净现金流量</td><td class="neg">-345.41</td><td class="neg">-233.58</td><td class="neg">-41.74</td><td class="pos">+355.26</td></tr>
+        </tbody>
+      </table></div>
+      <p class="sec-note">现金流出为含所得税口径，税金行单列仅用于勾稽；2029 年现金流入含流动资金回收 221.86 万元。静态投资回收期约 2.11 年（含建设期）；累计净现金流于第 3 年转正，后期仍需关注财政延期支付对垫资的影响。</p>
+    </div>
+  </div></div>
+  </div>
+
+  <div class="tab-panel" id="finPanel-adjust">
+  <div class="card"><div class="card-header"><h3>运营评审前后测算调整对照</h3><span class="badge">单位：万元</span></div><div class="card-body">
+    <div class="tbl-scroll"><table>
+      <thead><tr><th class="l">指标</th><th>运营评审初始口径</th><th>投资修改后口径</th><th class="l">变化</th></tr></thead>
+      <tbody>
+        ${ADJUST.map(r=>`<tr><td class="l">${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td class="l"><span class="${r[3]==='neg'?'neg':(r[3]==='pos'?'pos':'')}">${r[4]}</span></td></tr>`).join('')}
+      </tbody>
+    </table></div>
+    <p class="sec-note">运营评审后投资端下调收益、上调设备与退场成本，平均净利润率由 8.07% 降至 6.04%、第三年降至 5.59%，已跌破集团 8% 一般要求及 6% 低效项目底线。</p>
+  </div></div>
+  </div>`;
+}
+function switchFinTab(key, btn){
+  document.querySelectorAll('#finTabs .tab').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  $('page-finance').querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  var panel=$('finPanel-'+key);
+  if(panel) panel.classList.add('active');
+  finCharts();
+}
+function staffTable(){
+  let rows='';
+  ['管理人员','环卫作业','绿化维养'].forEach(cat=>{
+    const group=STAFF.filter(r=>r[0]===cat);
+    group.forEach((r,i)=>{
+      const cls=r[1]==='小计'?'subtotal':'';
+      rows+=`<tr class="${cls}">${i===0?`<td class="l" rowspan="${group.length}">${cat}</td>`:''}<td class="l">${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td><b>${r[4]}</b></td><td>${diffTag(r[5])}</td><td>${diffTag(r[6])}</td></tr>`;
+    });
+  });
+  rows+=`<tr><td class="l">道桥维养</td><td class="l">专职人员</td><td>1</td><td>1</td><td><b>1</b></td><td>${diffTag(0)}</td><td>${diffTag(0)}</td></tr>`;
+  rows+=`<tr class="total"><td class="l" colspan="2">合计</td><td>284</td><td>312</td><td>156</td><td>${diffTag(-128)}</td><td>${diffTag(-156)}</td></tr>`;
+  return `<div class="tbl-scroll"><table><thead><tr><th class="l">类别</th><th class="l">工种</th><th>招标下限</th><th>招标上限</th><th>测算人数</th><th>下限差值</th><th>上限差值</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+function vehTable(arr,label,total,groups){
+  let rows='';
+  if(groups){
+    let idx=0;
+    groups.forEach(g=>{
+      for(let i=0;i<g[1];i++){
+        const r=arr[idx++];
+        rows+=`<tr>${i===0?`<td class="l" rowspan="${g[1]}">${g[0]}</td>`:''}<td class="l">${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${diffTag(r[3])}</td></tr>`;
+      }
+    });
+  }else{
+    rows=arr.map(r=>`<tr><td class="l">${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${diffTag(r[3])}</td></tr>`).join('');
+  }
+  if(total) rows+=`<tr class="total"><td class="l" colspan="${groups?2:1}">合计</td><td>${total[0]}</td><td>${total[1]}</td><td>${diffTag(total[2])}</td></tr>`;
+  return `<div class="tbl-scroll narrow"><table><thead><tr>${groups?'<th class="l">需求类型</th>':''}<th class="l">${label||'车辆 / 设备名称'}</th><th>招标</th><th>测算</th><th>差值</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+function szTable(arr){return `<div class="tbl-scroll"><table><thead><tr><th>序号</th><th class="l">车辆 / 机械设备名称</th><th class="l">设备需求</th><th>数量</th></tr></thead><tbody>${arr.map(r=>`<tr class="${r[1]==='合计'?'total':''}"><td>${r[0]}</td><td class="l">${r[1]}</td><td class="l">${r[2]}</td><td><b>${r[3]}</b></td></tr>`).join('')}</tbody></table></div>`;}
+function renderStaff(){
+  $('page-staff').innerHTML = `
+  <div class="tabs" id="staffTabs">
+    <button class="tab active" onclick="switchStaffTab('people',this)">人员配置</button>
+    <button class="tab" onclick="switchStaffTab('vehicle',this)">车辆配置</button>
+  </div>
+
+  <div class="tab-panel active" id="staffPanel-people">
+  <div class="grid g4" style="margin-bottom:18px">
+    <div class="kpi"><div class="label">招标人员下限 / 上限</div><div class="value">284 / 312<span class="unit">人</span></div><div class="note">基准配备数，保洁员服务费另按 85 人核定</div></div>
+    <div class="kpi danger"><div class="label">在册测算配置（含管理）</div><div class="value">156<span class="unit">人</span></div><div class="note">较下限 -128 人；另绿化劳务外包 66 人，合计投入 222 人</div></div>
+    <div class="kpi"><div class="label">一线作业人员</div><div class="value">147<span class="unit">人</span></div><div class="note">环卫 92＋绿化 55；另劳务外包 66 人，一线合计 213 人</div></div>
+    <div class="kpi warn"><div class="label">超龄人员</div><div class="value">81<span class="unit">人 / 55.1%</span></div><div class="note">雇主责任险按 1,173 元/人·年已提足</div></div>
+  </div>
+
+  <div class="chart-row">
+    <div class="chart-box"><h4>在册人员配置对比（招标 vs 在册测算 · 人）</h4><div class="cv mid"><canvas id="chStaff"></canvas></div></div>
+    <div class="chart-box"><h4>保洁员人均作业面积（㎡/人·班）</h4><div class="cv mid"><canvas id="chArea"></canvas></div></div>
+  </div>
+
+  <div class="card"><div class="card-header"><h3>人员配置明细</h3><span class="badge">在册 156 人（含管理 8）＋外包 66 · 招标基准 284–312</span></div><div class="card-body">
+    <div class="doc-meta">在册配置 <b>156 人</b>（管理 8、环卫 92、绿化 55、道桥 1），其中一线 147 人；另拟绿化劳务外包 66 人，实际投入合计 <b>222 人</b>，较招标下限仍少 <b>62 人</b>，较上限少 <b>90 人</b>。招标明确 <b style="color:var(--danger)">不得采用劳务外包</b>，故 66 人方案不能作为合规配置，<b style="color:var(--danger)">人员响应不满足招标要求</b>。</div>
+    ${staffTable()}
+  </div></div>
+  </div>
+
+  <div class="tab-panel" id="staffPanel-vehicle">
+  <div class="kpi-grid k4" style="margin-bottom:18px">
+    <div class="kpi"><div class="label">招标车辆设备总数</div><div class="value">165<span class="unit">部</span></div><div class="note">环卫车辆 17＋环卫设备 36＋绿化 99＋市政 ≥13</div></div>
+    <div class="kpi warn"><div class="label">测算配置总数</div><div class="value">185<span class="unit">部</span></div><div class="note">机动车 22＋环卫设备 76＋绿化设备 87；总量较招标多 20 部</div></div>
+    <div class="kpi danger"><div class="label">机动车实配</div><div class="value">22 / 31<span class="unit">部</span></div><div class="note">少 9 部：绿化车辆 5/12、市政车辆 0/2；环卫车辆 17/17</div></div>
+    <div class="kpi"><div class="label">租赁车辆 / 年租金</div><div class="value">24<span class="unit">辆 / 165.34 万元</span></div><div class="note">含内部调拨；另新购车辆设备 140.18 万元</div></div>
+  </div>
+
+  <div class="card"><div class="card-header"><h3>车辆与设备配置对比</h3><span class="badge">单位：部 / 台</span></div><div class="card-body">
+    <div class="veh-compare">
+      <div class="chart-box" style="box-shadow:none;padding:0;border:none"><h4>招标 vs 测算配置数量（部）</h4><div class="cv mid"><canvas id="chVeh"></canvas></div></div>
+      <div>
+        <div class="tbl-scroll narrow"><table>
+          <thead><tr><th class="l">类别</th><th>招标</th><th>测算</th><th class="l">说明</th></tr></thead>
+          <tbody>${VEH_SUMMARY.map(r=>`<tr><td class="l">${r.k}</td><td>${r.a}</td><td>${r.c}</td><td class="l">${r.note}</td></tr>`).join('')}
+            <tr class="total"><td class="l">合计</td><td>165</td><td>185</td><td class="l">总量多 20 部：环卫设备 +40、绿化车辆 -7、市政 -13</td></tr>
+          </tbody>
+        </table></div>
+      </div>
+    </div>
+  </div></div>
+
+  <div class="subtabs" id="vehSubtabs">
+    <button class="subtab active" onclick="switchVehTab('hw',this)">环卫</button>
+    <button class="subtab" onclick="switchVehTab('lv',this)">绿化</button>
+    <button class="subtab" onclick="switchVehTab('sz',this)">市政</button>
+    <button class="subtab" onclick="switchVehTab('rent',this)">租赁</button>
+  </div>
+
+  <div class="veh-subpanel active" id="vehPanel-hw">
+    <div class="card"><div class="card-header"><h3>环卫业务 · 车辆与设备</h3><span class="badge">招标 53 / 测算 93</span></div><div class="card-body">
+      <div>
+        <div style="margin-bottom:18px"><h4 class="sub-h">环卫业务 · 车辆（招标 17 / 测算 17）</h4>${vehTable(VEH.hw_veh,'车辆名称',[17,17,0],[['道路保洁',3],['垃圾清运',4]])}</div>
+        <div><h4 class="sub-h">环卫业务 · 设备（招标 36 / 测算 76）</h4>${vehTable(VEH.hw_dev,'设备名称',[36,76,40],[['道路保洁设备',5],['扫雪设备',3]])}</div>
+      </div>
+    </div></div>
+  </div>
+  <div class="veh-subpanel" id="vehPanel-lv">
+    <div class="card"><div class="card-header"><h3>绿化业务</h3><span class="badge">招标 99 / 测算 92</span></div><div class="card-body">
+      ${vehTable(VEH.lv,'车辆 / 机械设备名称',[99,92,-7])}
+    </div></div>
+  </div>
+  <div class="veh-subpanel" id="vehPanel-sz">
+    <div class="card"><div class="card-header"><h3>市政业务</h3><span class="badge">招标 ≥13 / 测算未配置</span></div><div class="card-body">
+      ${szTable(VEH.sz)}
+    </div></div>
+  </div>
+
+  <div class="veh-subpanel" id="vehPanel-rent">
+  <div class="card"><div class="card-header"><h3>租赁车辆清单（24 辆，年租金 165.34 万元）</h3></div><div class="card-body">
+    <div class="tbl-scroll narrow"><table>
+      <thead><tr><th class="l">车辆设备类型</th><th>数量</th><th>年租金（万元/台·年）</th><th>总价（万元）</th><th class="l">用途</th></tr></thead>
+      <tbody>
+        ${RENT.map(r=>`<tr><td class="l">${r[0]}</td><td>${r[1]}</td><td>${money(r[2])}</td><td>${money(r[3])}</td><td class="l">${r[4]}</td></tr>`).join('')}
+        <tr><td class="l">其他（自卸车和装载机）</td><td>—</td><td>—</td><td>1.20</td><td class="l">冬季除雪</td></tr>
+        <tr class="total"><td class="l">合计</td><td>24</td><td>—</td><td>165.34</td><td class="l">—</td></tr>
+      </tbody>
+    </table></div>
+  </div></div>
+  </div>
+  </div>`;
+}
+function resetVehTab(){
+  document.querySelectorAll('#vehSubtabs .subtab').forEach(function(b,i){b.classList.toggle('active',i===0);});
+  var pw=$('page-staff'); if(!pw) return;
+  pw.querySelectorAll('.veh-subpanel').forEach(function(p){p.classList.toggle('active',p.id==='vehPanel-hw');});
+}
+function switchVehTab(key, btn){
+  document.querySelectorAll('#vehSubtabs .subtab').forEach(function(b){b.classList.remove('active');});
+  if(btn) btn.classList.add('active');
+  $('page-staff').querySelectorAll('.veh-subpanel').forEach(function(p){p.classList.remove('active');});
+  var panel=$('vehPanel-'+key);
+  if(panel) panel.classList.add('active');
+}
+function switchStaffTab(key, btn){
+  document.querySelectorAll('#staffTabs .tab').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  $('page-staff').querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  var panel=$('staffPanel-'+key);
+  if(panel) panel.classList.add('active');
+  if(key==='people'){ resetVehTab(); staffChart('chStaff'); areaChart('chArea'); }
+  else { vehChart('chVeh'); }
+}
+function riskTabs(active){
+  const cnt={all:RISKS.length,high:0,mid:0,low:0};RISKS.forEach(r=>cnt[r.lv]++);
+  return `<div class="tabs" id="riskTabs">
+    <button class="tab ${active==='all'?'active':''}" data-lv="all" onclick="switchRiskTab('all',this)">全部关注 <span class="tab-count">${cnt.all}</span></button>
+    <button class="tab ${active==='high'?'active':''}" data-lv="high" onclick="switchRiskTab('high',this)">高风险 <span class="tab-count">${cnt.high}</span></button>
+    <button class="tab ${active==='mid'?'active':''}" data-lv="mid" onclick="switchRiskTab('mid',this)">中风险 <span class="tab-count">${cnt.mid}</span></button>
+    <button class="tab ${active==='low'?'active':''}" data-lv="low" onclick="switchRiskTab('low',this)">低风险 <span class="tab-count">${cnt.low}</span></button>
+  </div>`;
+}
+function renderRisks(){
+  const cnt={mid:0,low:0,high:0};RISKS.forEach(r=>cnt[r.lv]++);
+  const lvName={high:'高',mid:'中',low:'低'};
+  $('page-risks').innerHTML = `
+  ${riskTabs('all')}
+  <div id="riskList">
+    ${RISKS.map((r,i)=>`<div class="risk-item ${r.lv}" data-lv="${r.lv}"><div class="risk-head"><span class="risk-level ${r.lv}">${lvName[r.lv]}风险</span><span class="risk-title">${i+1}. ${r.t}</span></div><div class="risk-desc">${r.d}</div></div>`).join('')}
+    <div class="empty-state" id="riskEmpty" style="display:none"><div class="es-title">该等级暂无关注事项</div><div class="es-sub">当前共 ${RISKS.length} 项关注事项，可切换其他等级或选择“全部关注”查看。</div></div>
+  </div>`;
+}
+function switchRiskTab(lv, btn){
+  document.querySelectorAll('#riskTabs .tab').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  var shown=0;
+  document.querySelectorAll('#riskList .risk-item').forEach(it=>{
+    var show=(lv==='all'||it.dataset.lv===lv);
+    it.style.display=show?'':'none';
+    if(show) shown++;
+  });
+  var empty=$('riskEmpty');
+  if(empty) empty.style.display=shown?'none':'';
+}
+function renderConclusion(){
+  $('page-conclusion').innerHTML = `
+  <div class="concl-box"><div class="big">${CONCL.head}</div></div>
+  <div class="card"><div class="card-header"><h3>主要落实事项</h3></div><div class="card-body"><div class="steps">
+    ${CONCL.items.map(t=>`<div class="step">${t}</div>`).join('')}
+  </div></div></div>
+  <div class="card"><div class="card-header"><h3>后续执行要求</h3></div><div class="card-body">
+    <div class="info-list">
+      <div class="info-item"><div class="k">投前</div><div class="v"><p>①确定作业边界，补充道路明细、绿化管养树木、道桥维管道路等，作为服务合同附件；②确定需接收原项目人员数量及工资水平，若冗余需修订测算；③明确绿化/市政板块（2.5 年）与环卫板块（3 年）起止、衔接及续约条款；④争取有利于我方及时收回服务费的保障机制；⑤明确可直接计入考核扣分项的分值，并以调价机制防止甲方单方调整考核标准；⑥落实市容中心参与考核的同类型项目数量及前续运营排名。</p><p>执行主体：市场拓展中心 + 索华。</p></div></div>
+      <div class="info-item"><div class="k">投后</div><div class="v"><p>保障作业质量符合甲方要求，避免考核扣款；绿化及道桥维管如采用分包，只能限于非主体业务，并须提前取得甲方书面同意，明确分包范围、责任划分及成本控制要求；人员不得采用劳务外包。现测算中的绿化外包66人、市政整体外包须在上会前完成合规调整。</p><p>执行主体：项目负责人 + 邬升男。</p></div></div>
+      <div class="info-item"><div class="k">其他</div><div class="v">其他合同内容按法律专业评审意见落实。</div></div>
+    </div>
+  </div></div>`;
+}
+function infoCard(title, items, badge){
+  return `<div class="card"><div class="card-header"><h3>${title}</h3>${badge?`<span class="badge">${badge}</span>`:''}</div><div class="card-body"><div class="info-list">
+    ${items.map(it=>`<div class="info-item"><div class="k">${it[0]}</div><div class="v">${it[1]}</div></div>`).join('')}
+  </div></div></div>`;
+}
+var INFO_TABS=[['background','背景信息'],['base','基础信息'],['invest','投资信息'],['ops','运营信息']];
+function infoTabs(active){
+  return `<div class="tabs" id="infoTabs">${INFO_TABS.map(t=>`<button class="tab ${active===t[0]?'active':''}" onclick="navigateTo('${t[0]}')">${t[1]}</button>`).join('')}</div>`;
+}
+function renderBackground(){
+  $('page-background').innerHTML = infoTabs('background') + infoCard('背景信息',[
+    ['采购方式','公开招标；招标文件载明 2026-10-21 14:00 开标，项目实际开标记录为 2026-10-27。'],
+    ['采购主体','湖州市住房和城乡建设局。本项目为统采分签项目，由住建局统一招标，合同甲方为湖州市市容环境卫生管理中心（环卫作业）、湖州市公用事业管理中心（绿化维养、道桥维养）。两家中心均为公益二类、差额拨款，经费由住建局出资、财政适当补助。'],
+    ['当地财政','湖州位于浙江北部、太湖南岸，面积 5,820 平方公里，处于沪杭宁三大城市腹地。2025 年一般公共预算收入 389.50 亿元、支出 586.25 亿元；2025 年末常住人口 347.2 万人，城镇化率 69.8%。'],
+    ['公司状况','本项目现由 5 家企业按板块分别作业，其中环卫板块合同于 2026 年 12 月到期，绿化、市政板块合同于 2027 年 6 月到期。上一轮 5 家合计中标年服务费 3,054.6 万元，本轮三板块最高限价年化 2,407.2 万元，减少 647.4 万元；服务面积增加 66 万㎡。不确定前续公司作业人员数量及结构。'],
+    ['竞争对手','主要竞争对手有浙江美佳物业、浙江聚力德、湖州市政工程等，均具备较强本地运营经验与属地化团队，竞争优势明显。'],
+    ['其他要求','市政公用工程施工总承包叁级及以上；履约期内不得劳务外包；人员到位率不低于90%；车辆须2021年1月1日后首次登记；其余详见招标文件。']
+  ],'投资评审报告 · 项目概况') + `
+  <div class="card"><div class="card-header"><h3>服务费及作业规模变化</h3></div><div class="card-body">
+    <table><thead><tr><th class="l">板块</th><th>上轮中标(万元/年)</th><th>本轮限价年化(万元/年)</th><th class="l">单价变化</th></tr></thead><tbody>
+      <tr><td class="l">环卫（两片区合计）</td><td>1759</td><td>1100</td><td class="l">板块折算 10.02 → 6.18 元/㎡（-3.84）</td></tr>
+      <tr><td class="l">绿化（两片区合计）</td><td>485.6</td><td>692</td><td class="l">4.42 → 4.07 元/㎡（-0.35）</td></tr>
+      <tr><td class="l">市政</td><td>810</td><td>615.2</td><td class="l">-194.8 万元</td></tr>
+      <tr class="total"><td class="l">合计</td><td>3054.6</td><td>2407.2</td><td class="l">减少 647.4 万元</td></tr>
+    </tbody></table>
+    <p class="sec-note">本轮合计数为三板块按各自服务期折算的限价年化值；三板块限价总额为6,568万元，不能等同于2,407.2×3。</p>
+  </div></div>`;
+}
+function renderBase(){
+  $('page-base').innerHTML = infoTabs('base') + infoCard('基础信息',[
+    ['项目模式','政府采购。'],
+    ['服务期限','3 年。环卫作业：2027-01-01 至 2029-12-31（合同一年一签）；绿化维养、道桥维养：2027-07-01 至 2029-12-31（合同分两次签订，实际服务期 2.5 年）。'],
+    ['服务范围','仁皇片区内的清扫保洁、垃圾收运、绿化管护、市政道路桥梁维护等；具体区域以招标文件附图为准，文本未载明边界。'],
+    ['服务内容','① 178.09 万㎡道路保洁，日均约 79 吨生活垃圾清运；② 暂估 170 万㎡绿地（尽调 8,586 株行道树、12.2 万㎡公园养护）；③ 市政道路桥梁维护（尽调 39 条市政道路、65 座桥梁及附属设施，招标设施清单由甲方中标后提供且服务期内可调整）。'],
+    ['服务费','三板块最高限价合计 6,568 万元（环卫 3,300、绿化 1,730、道桥 1,538），按各自服务期折算限价年化 2,407.2 万元；2028 满年含税测算收入 2,358.52 万元。6,568÷3＝2,189.33 万元，不是本页年化口径。'],
+    ['报价方式','环卫总价包干、道路分项单价不得超限价；绿化固定单价 4.07 元/㎡·年、按实结算；道桥按审定价×中标折扣结算，折扣报价不得超过95%。'],
+    ['服务费来源','财政预算。'],
+    ['付费方式','环卫：2027年合同生效后7个工作日内预付不超过40%，其后按4月、7月、10月末累计进度支付；2028年首期累计不超过23%，之后同季节点支付，尾款结合年终考核。绿化/道桥：具备条件后7个工作日内预付该期年合同价款40%，审定后支付至100%。'],
+    ['考核方式','按运营评审意见整理：三套考核办法均为100分制，优秀≥90、良好88–90、合格85–88、不合格<85；环卫年度预留5%（得分）＋1.5%–3%（年度排名及考核）作为考核预留费。招标文件未附完整评分表。'],
+    ['投标/履约保证金','招标文件未载明投标保证金；履约保证金为无。'],
+    ['调价方式','道路保洁面积变动超基数5%、垃圾清运量变动超基数10%的部分按合同价另行结算；招标范围外增减任务按中标单价与实际服务时间据实结算；最低工资政策调整按实际平均在岗人数补足人员经费。']
+  ],'投资评审报告 · 基础信息');
+}
+function renderInvest(){
+  $('page-invest').innerHTML = infoTabs('invest') + infoCard('投资信息',[
+    ['投资主体','北控城市环境服务集团有限公司。'],
+    ['资金来源','项目预付款 + 内部周转资金。'],
+    ['项目总投资','测算总投资 345.41 万元，其中车辆设备投资 140.18 万元、前期开办 12.38 万元、智慧环卫 31.93 万元、流动资金 160.92 万元；车辆设备及智慧环卫合计 172.11 万元，占2028满年含税服务费 7.3%（未超集团 3 年及以下项目不高于 30% 的标准）。'],
+    ['融资方案','不适用（无外部融资，采用项目预付款及内部周转资金）。'],
+    ['期末资产处置','本项目作业车辆主要来源为内外部租赁车辆，部分电动快保车和无人作业设备按合作期完成折旧。']
+  ],'投资评审报告 · 投资信息');
+}
+function renderOps(){
+  $('page-ops').innerHTML = infoTabs('ops') + infoCard('运营信息',[
+    ['拟运营单位','（暂定）北控城市环境服务有限公司与平台公司成立合资公司。'],
+    ['现运营单位现状','现由 5 家企业按板块分别作业，其中环卫板块合同于 2026 年 12 月到期，绿化、市政板块合同于 2027 年 6 月到期；现作业具体人数暂无法获取。'],
+    ['注册资本金','按公司要求注资。'],
+    ['股东及股权比例','（暂定）北控城市环境服务有限公司持股 51%，甲方平台公司持股 49%。'],
+    ['合作模式','（暂定）按持股比例承担业务，同股同权，按股比分配利润。'],
+    ['前期开荒费','108.26 万元，占三年总服务费的 1.68%，按集团要求与续签回款挂钩。'],
+    ['作业方案配置','拟任项目负责人：邬升男（项目总经理）；在册 156 人（管理 8、环卫 92、绿化 55、道桥 1），其中一线 147 人；另拟绿化劳务外包 66 人，实际投入 222 人。招标明确不得劳务外包，该方案须调整为自有用工或仅对非主体业务依法分包并取得甲方书面同意。'],
+    ['车辆配置','购置：2 台无人设备、60 辆小型保洁车、其他设备工具 90 件（绿化及除雪）；租赁（含内部调拨）：24 辆中大型车。环卫车辆 17 辆与招标数量一致，但租赁的8吨洗扫车、洒水车低于招标≥15吨门槛，存在无实质性响应风险。']
+  ],'投资评审报告 · 运营信息');
+}
+/* ============ 上会资料 · 资料切换 ============ */
+var DOC_TABS=[['doc1','运营评审意见'],['doc2','投资测算表'],['doc3','招标文件']];
+function docTabs(active){
+  return `<div class="tabs doc-tabs">${DOC_TABS.map(t=>`<button class="tab ${active===t[0]?'active':''}" onclick="navigateTo('${t[0]}')">${t[1]}</button>`).join('')}</div>`;
+}
+/* ============ 上会资料 · 运营评审意见 ============ */
+const DOC={name:'湖州仁皇片区市政园林环卫一体化管养（大管家）项目运营评审意见',file:'files/opinion.bin',dl:'湖州仁皇片区市政园林环卫一体化管养（大管家）项目运营评审意见.pdf',meta:'城服运营中心 · 2026-10-24 · 新增项目 · 环卫 3 年 / 绿化、市政 2.5 年'};
+function renderDoc(){
+  $('page-doc1').innerHTML = docTabs('doc1') + `
+  <div class="doc-toolbar"><span class="dt-name">${DOC.name}</span><div class="dt-actions"><button class="doc-btn" onclick="window.print()">打印 / 导出 PDF</button><a class="doc-dl" href="${DOC.file}" download="${DOC.dl}">下载 PDF 原文</a></div></div>
+  <div class="doc-meta">${DOC.meta} · 以下为评审意见与投资回复、运营答复的逐项整理。</div>
+
+  <div class="doc-section"><h3>一、运营风险汇总</h3>
+    <h4>1. 利润率偏低</h4>
+    <p>调整后平均净利润率 6.04%，低于集团一般要求 8%，仅略高于低效项目 6% 下限；最低（第三年）净利润率 5.59%，已跌破 6%。在服务费按最高限价下浮、人工与合规成本刚性上升的情况下，存在实际净利率继续下探及被上级单位考核处罚的风险。</p>
+    <h4>2. 人员数量不足且用工方式不合规</h4>
+    <p>招标文件明确人员基准配备数为 284—312 人，284 人为项目完全接管后的最低配置要求，且履约期内不得采用劳务外包。测算在册 156 人（管理 8、环卫 92、绿化 55、道桥 1），另拟绿化劳务外包 66 人，实际投入 222 人，较下限少 62 人、较上限少 90 人；即使在册人员全部到位，也较下限少 128 人。人员到位率要求不低于 90%（即不低于 256 人），现 222 人仅约 78.2%，不满足招标要求。若将 66 名外包人员转为自有员工，人工成本将上升，进一步压缩利润。</p>
+    <h4>3. 保洁员人均作业面积偏大</h4>
+    <p>招标保洁员服务费按 85 人核定，并允许在 72—98 人区间内按作业质量增减，服务费不随人数浮动。测算配置保洁员 62 人、单班作业；按实际道路作业面积 593,638.67㎡计算，人均约 9,574.85㎡/人·班，按 72 人约 8,244.98㎡、按 85 人约 6,983.98㎡，均低于行业一般 10,000㎡/人·班标准，且一至三级道路应双班作业，现全部按单班配置，作业质量与考核扣款风险较大。此前按道路总面积 1,780,916㎡计算的 28,724.45㎡/人系分母口径错误，已按实际作业面积更正。</p>
+    <h4>4. 垃圾物流模式不合理</h4>
+    <p>招标垃圾清运单价 137.28 元/吨·天、暂估约 79 吨/天，测算日清运量 76.5 吨。15 吨、18 吨压缩车无法对接中小型转运站（大型站可卸料但经济性差），适宜直运末端；测算单次往返 30 公里与至 12 公里外转运站的里程不符。2 辆新能源沿街垃圾车每日 180 公里、15 吨厨余车每日 160 公里，均超出城市道路频繁装卸条件下一般不超过 100 公里/日的合理水平；新能源车能耗按油费计列亦不合理。</p>
+    <h4>5. 市政整体外包与分包合规风险</h4>
+    <p>招标仅允许非主体、非关键性工作分包，且须经采购人书面同意；主体部分不得分包，履约期内不得劳务外包。测算将市政道路和桥梁日常维护整体外包、由平台公司收取管理费，并将绿化 66 名养护工按劳务外包配置，均与招标约束存在冲突。若不能在投标文件中说明并为采购人接受，存在响应无效、终止合同及退场风险。</p>
+  </div>
+
+  <div class="doc-section"><h3>二、利润及投资</h3>
+    <h4>1. 利润</h4>
+    <div class="table-wrap"><table><thead><tr><th class="l">口径</th><th>平均</th><th>第一年</th><th>第二年</th><th>第三年</th></tr></thead><tbody>
+      <tr><td class="l">初始净利润（万元）</td><td>161.17</td><td>138.42</td><td>175.75</td><td>169.34</td></tr>
+      <tr><td class="l">初始净利润率</td><td>8.07%</td><td>8.58%</td><td>7.96%</td><td>7.67%</td></tr>
+      <tr class="total"><td class="l">调整后净利润（万元）</td><td>122.07</td><td>100.78</td><td>141.07</td><td>124.36</td></tr>
+      <tr class="total"><td class="l">调整后净利润率</td><td>6.04%</td><td>6.20%</td><td>6.34%</td><td>5.59%</td></tr>
+    </tbody></table></div>
+    <p>初始测算平均净利率 8.07%，高于集团一般要求 8% 及低效项目 6% 标准，但最低（第三年）7.67% 低于 8%。投资回复调整后，平均净利率降至 6.04%，最低（第三年）5.59%，均低于集团一般要求，最低年份跌破低效项目 6% 线。</p>
+    <h4>2. 投资</h4>
+    <p>初始测算初期总投资 270.21 万元，其中新购及收购车辆设备 80.73 万元；投资回复调整后初期总投资 345.41 万元，其中新购及收购车辆设备 140.18 万元、智慧环卫 31.93 万元、前期开办 12.38 万元、流动资金 160.92 万元。车辆设备与智慧环卫合计 172.11 万元，占 2028 年满年含税服务费 2,358.52 万元的 7.3%；初期总投资占满年服务费 14.65%，均低于集团 3 年及以下项目不高于 30% 的标准。</p>
+  </div>
+
+  <div class="doc-section"><h3>三、中标把握性</h3>
+    <p>本项目由我方较早跟进，并推动业主由分散招标向城市管家项目转型；市住建局选择仁皇山片区作为城市管家试点。招标代理通过业主、本地平台公司间接对接，可获得一定帮助。我方城市管家经验、品牌及综合实力受业主认可，并被协调与本地平台公司组成联合体投标，中标把握较大。项目实际开标记录为 2026-10-27（招标文件原载 2026-10-21 14:00），目前状态为已中标，后续以中标通知书及合同签订为准。</p>
+  </div>
+
+  <div class="doc-section"><h3>四、服务范围及内容</h3>
+    <p>本轮采购预算总价 7,260 万元，采购限价合计 6,568 万元；环卫运营期 3 年、绿化及市政运营期均为 2.5 年，按限价合计年化 2,407.2 万元。</p>
+    <div class="table-wrap"><table><thead><tr><th class="l">业务</th><th>采购限价总额（万元）</th><th>年化服务费（万元）</th><th>服务期限</th></tr></thead><tbody>
+      <tr><td class="l">环卫作业</td><td>3,300</td><td>1,100</td><td>3 年</td></tr>
+      <tr><td class="l">绿化维养</td><td>1,730</td><td>692</td><td>2.5 年</td></tr>
+      <tr><td class="l">道桥维养</td><td>1,538</td><td>615.2</td><td>2.5 年</td></tr>
+      <tr class="total"><td class="l">合计</td><td>6,568</td><td>2,407.2</td><td>—</td></tr>
+    </tbody></table></div>
+    <p>对比上一轮 5 家企业合计中标年服务费 3,054.6 万元，本轮三板块限价年化 2,407.2 万元，减少 647.4 万元（-21.2%）；环卫作业面积增加约 3 万㎡、绿化养护面积增加约 63 万㎡（合计约 66 万㎡）。测算 2027 年含税服务费 1,723.76 万元，因绿化和市政仅运营半年；2028 年满年 2,358.52 万元，较限价年化 2,407.2 万元低 48.68 万元（-2.0%）；三年平均 2,146.93 万元，较合同总额口径三年均值 2,189.33 万元（6,568÷3）低 42.40 万元（-1.9%），不能将 2,146.93 万元直接与 2,407.2 万元比较。投资回复称“按最高限价报价”，但测算表 2028 年满年含税服务费低于限价年化 48.68 万元，报价口径需与投标文件统一。</p>
+  </div>
+
+  <div class="doc-section"><h3>五、考核标准</h3>
+    <p>本轮年化服务费至少减少 647.4 万元，服务标准应相应下调。投资回复：范围及内容无其他变化，考核标准降低；环卫人车配置数量低于现作业企业，绿化全部调整为二级管养标准。</p>
+    <p>环卫按月度、季度、年度百分制考核，月度得分 88 分以下扣减当月服务费；年度结算时按约定服务费的 5% 结合考核结果核减，并按 1.5%—3% 结合年终考核排名核减，另有 7% 与上一年代付代缴费用清算挂钩。连续 2 个月或累计 3 个月月度不合格，年度直接不合格；年度不合格或同年度 2 次、累计 3 个月月度不合格，扣罚款并解除合同。绿化按月考核，80—89 分每低 1 分扣 2,000 元、70—79 分每低 1 分扣 3,000 元、低于 70 分扣 5 万元，连续两月低于 70 分或一年累计 4 个月不合格解除合同。市政 90 分合格，连续 2 次或累计 3 次不合格，或年度累计扣款超 10 万元终止合同。上述分值及扣款标准来自评审所附考核办法，招标文件正文明确按采购人现行考核办法执行，签约前应取得最新版本并逐条核对。</p>
+  </div>
+
+  <div class="doc-section"><h3>六、人员配置</h3>
+    <h4>1. 最低配置要求</h4>
+    <div class="table-wrap"><table><thead><tr><th class="l">口径</th><th>招标下限</th><th>招标上限</th><th>在册测算</th><th>绿化外包</th><th>实际投入</th></tr></thead><tbody>
+      <tr><td class="l">管理人员</td><td>9</td><td>11</td><td>8</td><td>—</td><td>8</td></tr>
+      <tr><td class="l">环卫作业</td><td>95</td><td>121</td><td>92</td><td>—</td><td>92</td></tr>
+      <tr><td class="l">绿化维养</td><td>179</td><td>179</td><td>55</td><td>66</td><td>121</td></tr>
+      <tr><td class="l">道桥维养</td><td>1</td><td>1</td><td>1</td><td>—</td><td>1</td></tr>
+      <tr class="total"><td class="l">合计</td><td>284</td><td>312</td><td>156</td><td>66</td><td>222</td></tr>
+      <tr><td class="l">差额（对下限）</td><td>—</td><td>—</td><td>-128</td><td>—</td><td>-62</td></tr>
+      <tr><td class="l">差额（对上限）</td><td>—</td><td>—</td><td>-156</td><td>—</td><td>-90</td></tr>
+    </tbody></table></div>
+    <p>招标人员基准配备数为 284—312 人，284 人为完全接管后的最低要求；管理 9—11 人、环卫 95—121 人（保洁员服务费按 85 人核定，可在 72—98 人间调整）、绿化 179 人、道桥 1 人。测算在册 156 人（管理 8、环卫 92、绿化 55、道桥 1），另绿化劳务外包 66 人，实际投入 222 人，较下限少 62 人、较上限少 90 人；在册口径较下限少 128 人。招标明确履约期内不得采用劳务外包，66 名外包人员不能作为合规响应；人员到位率不得低于 90%（不低于 256 人），现 222 人仅约 78.2%。投资回复称环卫人车考核较细、绿化市政可外包，但该表述与招标“不得劳务外包”及“非主体分包须书面同意”的约束不一致，须调整。</p>
+    <h4>2. 人员接收</h4>
+    <p>招标要求按照原作业人员自愿原则，接收符合岗位要求的一线环卫作业人员，且一年内不得无故解聘，薪酬福利不低于原有标准；人员花名册须在 2027-01-20 前报采购人备案。由于缺少原作业企业人员花名册、年龄结构、工龄及薪酬台账，接收人数、补偿及同工同酬成本无法逐项核实，是测算的主要不确定项。项目到期后一线作业人员由后续中标企业接收。</p>
+    <h4>3. 超龄人员</h4>
+    <p>招标要求超龄劳动者占比不得超过 75%，且须签订书面用工协议、合理安排岗位。初始测算超龄 122 人、占比 76.25%，已超过上限；投资回复一线超龄 56/91=61.5%；调整后在册超龄 81 人、占比 55.1%，表面满足比例要求，但若将 66 名绿化外包人员纳入自有，超龄比例可能回升，须在投标前完成人员年龄结构复核。</p>
+    <h4>4. 工资薪酬</h4>
+    <p>投资回复：测算工资为尽调期间现场询问所得，符合实际；社保缴费符合属地政策。招标规定如遇政策性调整最低工资标准或其他收入待遇标准，采购人按实际平均在岗人数补足增加的人员经费；运营要求同时关注社保缴费基数上调、加班费及每年体检（不低于 300 元/人）等刚性成本。</p>
+  </div>
+
+  <div class="doc-section"><h3>七、车辆设备配置</h3>
+    <h4>1. 环卫业务</h4>
+    <p>招标要求环卫车辆 17 部、设备 36 部（合 53 部）。测算车辆 17 部，与招标数量一致：15 吨水车 3、15 吨机扫车 3、3 吨道路养护车 2、15/18 吨压缩车 5、15 吨自卸车 1、2 吨新能源沿街收集车 2、2.4 吨皮卡 1；设备 76 部，较招标多 40 部，主要为三轮电瓶快保车等小型设备。车辆数量虽已配齐，但租赁清单中的 8 吨洗扫车、洒水车低于招标“单车总质量≥15 吨”的规格要求，不能替代 15 吨级车辆；招标还要求车辆 2021-01-01 后首次登记、租赁协议覆盖服务期且出租方与所有权方一致，须逐车核验行驶证、登记证及租赁协议。</p>
+    <h4>2. 绿化业务</h4>
+    <p>招标绿化车辆及设备合计 99 部，其中车辆 12 部、设备 87 台；测算 92 部，少 7 部，全部为机动车（洒水车 -1、登高车 -1、运输车 -3、巡查车 -2）。绿化按 4.07 元/㎡·年固定单价、约 170 万㎡暂估面积报价，面积按实结算、单价不调整；投资回复因预算压缩、绿化全部按二级标准管护，绿化与环卫洒水车共用，并同意增配绿篱修剪车 1 台。共用洒水车须同时满足环卫与绿化作业时段，实际可调度性需在投标前验证。</p>
+    <h4>3. 市政业务</h4>
+    <p>招标要求市政车辆及机械设备不少于 13 部（台），包括铣刨机、摊铺机、压路机、沥青保温运输车、工程抢修车等；测算按业务整体外包，未配置任何车辆设备，缺口 13 部。招标仅允许非主体、非关键性工作分包且须经采购人书面同意，市政道路桥梁日常维护整体外包的合规性存疑；如改为自营，须补齐 13 部设备及相应人员。</p>
+    <h4>4. 车辆接收及通行</h4>
+    <p>投资回复：无车辆接收；新购车辆计提完折旧；通行条件无异常。招标未要求接收原作业企业车辆，但要求中标后实际投入车辆更换须经采购人书面同意，且不得低于投标响应条件；租赁车辆须提供租赁协议、首期租金发票、行驶证及购车发票，租赁期限应满足项目服务期。</p>
+  </div>
+
+  <div class="doc-section"><h3>八、环卫业务</h3>
+    <h4>1. 道路清扫保洁</h4>
+    <p>招标道路总面积 1,780,916㎡，测算实际作业面积 593,638.67㎡、占比约 33.33%，配置保洁员 62 人、单班作业，人均约 9,574.85㎡/人·班；按招标下限 72 人约 8,244.98㎡、按服务费核定 85 人约 6,983.98㎡。按浙江省及湖州市定额，一级道路 3,500—4,500㎡/人（20h 保洁）、二级 6,000—8,000㎡/人（18h）、三级 8,000—12,000㎡/人（16h）、四级 12,000—20,000㎡/人（城郊乡镇）；一至三级道路应双班作业，现全部单班，作业强度偏大。招标保洁员服务费按 85 人核定、可在 72—98 人区间调整且服务费不随人数浮动，压缩至 62 人虽不增加收入，但会放大考核扣款风险。</p>
+    <h4>2. 人机协同及机械作业</h4>
+    <p>招标设备配置要求三轮电瓶快保车 30 辆。测算配置人力保洁车 30 辆、电动保洁车 15 辆；投资回复调整为电动快保车 29 辆、人力快保车 31 辆，电动快保车较招标少 1 辆、人力快保车多 31 辆，结构与招标要求不一致。机械作业按作业里程/作业能力计算车辆需求，租赁清单 24 辆（含 1 辆皮卡）与驾驶员配置需逐车对应，避免有车无司机或有司机无车；投资回复称已调整驾驶员人数。</p>
+    <h4>3. 无人驾驶</h4>
+    <p>测算投入 2 辆无人驾驶清扫车（招标仅要求无人清扫设备 1 台），均未配置安全员；按《湖州市智能网联车辆产业创新发展条例》须配随车或远程安全员，建议按 1:3—1:5 配置并与主管部门确认；新购小型无人清洁机器人建议每 5—10 台配 1 名管理员。EDR、云控平台、智慧城管接入、网络安全等通讯成本未计，维修费未计 2 辆无人车，8 吨洗扫车每日约 300 公斤扫街污泥未计处置成本。投资回复：已增加流量费、维修费；污泥倾倒至甲方指定场所，无其他费用。</p>
+    <h4>4. 垃圾清运</h4>
+    <p>招标垃圾清运单价 137.28 元/吨·天、暂估约 79 吨/天，测算日清运量 76.5 吨。15 吨、18 吨压缩车不适用于中小型转运站倾倒，应直运末端；2 辆新能源沿街垃圾车每日 180 公里、18 吨压缩车 120 公里、15 吨压缩车 90 公里、15 吨厨余车 160 公里，均超出合理里程。新能源车能耗按油费计算不合理，应改为电费；车险及 GPS 测算 9 辆，多算原有车辆 3 辆；垃圾处置费、过路过桥费均回复不发生，须在合同中明确处置场所、计量方式及费用承担。</p>
+    <h4>5. 除雪及应急</h4>
+    <p>测算按 2 场雪（1 场小雪、1 场中雪），缺少大雪；仁皇片区 2022 年曾出现大雪，近 5 年有 5 次降雪过程。招标要求至少 1 套推雪板和 1 台撒布机（布撒宽度 3.5m 以上）或其他同等功能除雪设备。投资回复：湖州降雪较少，每年投入约 19 万元保障冬季除雪。运营建议补充大雪场次，增加“暴雪及连续大雪应急结算条款”，明确超标准作业补偿机制。</p>
+  </div>
+
+  <div class="doc-section"><h3>九、园林绿化养护管理业务</h3>
+    <p>招标绿化人员 179 人（绿地养护 171、水电工 2、潜山公园保安 6）。测算在册绿化 55 人，另劳务外包 66 人，合计 121 人，较招标少 58 人；按 170 万㎡养护面积、121 人计人均约 1.4 万㎡，高于按 171 名养护人员配置的约 1.0 万㎡/人，作业强度偏大。投资回复调整为 66 名养护工、29 名园艺工、5 名养护班长，并增配 2 名片区主管，养护工采取劳务形式；该“劳务形式”与招标不得劳务外包的约束冲突。车辆方面，绿化车辆 12 部中洒水车少 1、登高车少 1、运输车少 3、巡查车少 2，合计少 7 部；投资回复因预算压缩、绿化全部按二级标准管护，绿化与环卫洒水车共用，并同意增配绿篱修剪车 1 台。大树保险已计；公园广场水电费因第三方活动极少，暂可忽略。</p>
+  </div>
+
+  <div class="doc-section"><h3>十、市政设施维护业务</h3>
+    <p>市政业务范围为仁皇片区内道路和桥梁日常维护维修，招标要求配置市政车辆及机械设备不少于 13 部（台）、专职人员 1 人并组建相对固定的养护班组。测算将机械、人员、耗材整体外包，未配置任何车辆设备，拟向湖州平台公司收取一定管理费。招标仅允许非主体、非关键性工作分包且须经采购人书面同意，整体外包的合规性需在投标前解决；如自营，须补齐 13 部设备、专职人员及班组，并计入相应成本。</p>
+  </div>
+
+  <div class="doc-section"><h3>十一、回款</h3>
+    <p>招标付款安排：环卫合同生效后 7 个工作日内可支付不超过 2027 年约定服务费 40% 的预付款（中标人可放弃），2027-04-30 前累计不超过 46%、2027-07-31 前 69%、2027-10-31 前 85%、2028-01-31 前 100%；2028 年 1 月 31 日前当年累计不超过 23%，此后按 46%、69%、87%、100% 支付；绿化、道桥按 2027-07-01—2028-06-30 及 2028-07-01—2029-12-31 两个年度分别支付 40% 预付款，审定后支付至 100%。季度考核不合格或排名末 2 位且未达优秀的，可推迟或扣减当期服务费 1%，延迟最长不超过 6 个月。甲方反馈目前回款约 2—3 个月，无恶意欠款；运营要求核查财政支付能力，在合同中明确支付时限、逾期责任及不得以财政未拨付为由无限延期。招标按季度考核结算，不能简单要求改为月度付款，应重点争取预付款足额支付及缩短财政拨付滞留。</p>
+  </div>
+
+  <div class="doc-section"><h3>十二、退场</h3>
+    <p>项目服务期 3 年，运营不达标、考核排名多次靠后或到期不能续签将面临退场。原测算退场人员补偿 8.55 万元，未计低于市场价的折现损失、调拨暂存物流成本；投资回复已调整，仅环卫板块为 22.275 万元，仍需补充车辆折现及物流成本口径。招标将“移交平稳过渡计划实施方案”纳入技术评分（5 分），并要求合同期内未经甲方同意不得转让或分包；退场补偿、车辆处置及移交费用应在投标报价中充分考虑。</p>
+    <div class="doc-note warn">以上为运营评审意见要点整理；完整意见、投资回复及运营答复请下载 PDF 原文核对。</div>
+  </div>`;
+}
+/* ============ 上会资料 · 投资测算表（提请评审资料展示） ============ */
+const TIHING={name:'湖州仁皇片区市政园林环卫一体化管养（大管家）项目投资测算表',file:'files/tihing.bin',dl:'湖州仁皇片区大管家项目投资测算表（提请评审）.pdf',meta:'提请评审资料 · 成本及利润 + 投资数据一览表 · 运营评审意见投资回复调整后 · 2026-10-24'};
+// 三年利润（投资回复调整后 vs 初始测算）
+const PBT={
+  adj:[['利润总额',162.76,134.37,188.09,165.82],['净利润',122.07,100.78,141.07,124.36],['净利润率','6.04%','6.20%','6.34%','5.59%']],
+  init:[['利润总额',214.89,184.56,234.34,225.79],['净利润',161.17,138.42,175.75,169.34],['净利润率','8.07%','8.58%','7.96%','7.67%']]
+};
+// 收入与税金明细（运营评审意见 · 投资回复口径）；营业成本及折旧合计为倒推值
+const RVT=[
+  ['业务收入（含税）',2130.17,1709.30,2340.60,2340.60],
+  ['业务收入（不含税）',2009.59,1612.55,2208.11,2208.11],
+  ['税金及附加',72.11,36.94,89.70,89.70],
+  ['　其中：增值税',65.55,33.58,81.54,81.54],
+  ['　　　　附加税（城建税+教育费附加）',6.56,3.36,8.15,8.15],
+  ['　　　　销项税 / 进项税','120.58 / 55.02','96.75 / 63.18','132.49 / 50.94','132.49 / 50.94'],
+  ['营业成本及折旧合计（倒推）',1774.72,1441.24,1930.32,1952.59],
+  ['利润总额',162.76,134.37,188.09,165.82],
+  ['所得税（25%）',40.69,33.59,47.02,41.46],
+  ['净利润',122.07,100.78,141.07,124.36],
+  ['净利润率','6.04%','6.20%','6.34%','5.59%']
+];
+// 投资表：调整后 vs 初始测算
+const IVT=[
+  ['初期总投资',345.41,270.21,75.20],
+  ['其中：新购及收购车辆设备',140.18,80.73,59.45],
+  ['　　　智慧环卫',31.93,null,31.93],
+  ['　　　土建',0.00,null,0.00],
+  ['　　　前期开办',12.38,25.58,-13.20],
+  ['　　　流动资金',160.92,163.90,-2.98]
+];
+// 成本驱动（人车配置）核对
+const CDT=[
+  ['一线作业人员','147 人（环卫 92、绿化 55）','招标下限 284 人、上限 312 人，少配 128—156 人；保洁员 62 人（下限 72），绿地养护 43 人（要求 171），补员将直接抬升人工成本'],
+  ['管理人员','8 人','招标下限 9、上限 11，少配 1 人；信息化管理员 0 人（招标要求 2 人）'],
+  ['环卫作业车辆','17 部','与招标基本一致，车型有差异：15 吨自卸车少 3 辆，新增 2 吨新能源沿街收集车 3 辆、3 吨道路养护车 1 辆'],
+  ['环卫作业设备','76 部','招标要求 36 部，多配 40 部：人力保洁车 31、小型扫地机多 8、3 吨无人车多 1、雪滚 1'],
+  ['绿化机动车','92 部','招标要求 99 部，少配 7 部：洒水车 -1、登高车 -1、运输车 -4、巡查车 -2（绿化全部按二级管养标准）'],
+  ['市政设备','按业务外包','招标要求不少于 13 台，测算无具体配置数量，需确认外包后有效投入'],
+  ['除雪成本','每年约 19 万元（投资回复）','测算仅按 2 场雪（1 小雪、1 中雪），缺大雪；仁皇片区 2022 年曾现大雪，近 5 年有 5 次降雪过程']
+];
+const CDRISKS=[
+  {lv:'high',t:'净利率安全边际不足',d:'调整后平均净利润率 6.04% 低于集团一般要求 8%，最低（第三年）5.59% 已跌破低效项目最低 6% 的标准；一旦按招标下限补足人员或发生成本超支，净利率将由负向缺口进一步扩大。'},
+  {lv:'mid',t:'三套收入口径未统一',d:'投资评审报告附件1 年服务费 2,358.52 万元、提请评审资料平均业务收入（含税）2,146.93 万元、运营评审意见投资回复平均 2,130.17 万元，差异约 228 万元/年，主要来自绿化与市政 2.5 年服务期的年化折算方式。'},
+  {lv:'mid',t:'一线人员配置不满足招标要求',d:'测算 147 名一线作业人员，仅为招标最低数量要求的约 75%（含绿化劳务）；需接收原运营单位符合条件的一线环卫作业人员，一年内不得无故解聘、薪酬福利不低于原标准，且不掌握现有人数与结构，是否冗员无判断依据。'},
+  {lv:'mid',t:'保洁员人均覆盖面积过大',d:'测算保洁员 62 人（下限 72 人），人均道路覆盖面积约 28,724.45 ㎡；按 72 人配置约 24,734.94 ㎡，仅满足巡回保洁。对比行业 10,000 ㎡/人·班及浙江、湖州属地定额，全部道路单班作业不合理，一至三级路应双班作业。'},
+  {lv:'mid',t:'成本控制风险',d:'本轮对比上轮按总价预算减少 811.8 万元、按实际中标价减少 647.4 万元，单价与作业量同步下降；招标明确台风、雨、雪、旱、涝、冰冻等重大自然灾害人员物资投入费用均含在报价中不再单独计取，应急成本不可控。'},
+  {lv:'mid',t:'作业边界数据不充分',d:'清扫保洁无道路明细、绿化面积为暂估（需中标后委托第三方测量）、道桥维护无道路明细；尽调取得部分政府方数据但未实地测量清点，成本测算基数准确性无法核实。'},
+  {lv:'mid',t:'垃圾物流模式与里程不合理',d:'15/18 吨压缩车无法对接中小型转运站，单次往返 30 公里与 12 公里外转运站里程不符；新能源沿街车每日 180 公里、15 吨厨余车每日 160 公里，均超出频繁装卸条件下每日不超 100 公里的合理水平。'},
+  {lv:'mid',t:'退场成本不完整',d:'初始测算退场人员补偿 8.55 万元，投资回复调整后仅环卫板块 22.275 万元；低于正常市场价的折现损失（新购及调拨）、调拨暂存物流成本（期初调入、期末调出）仍未计入。'},
+  {lv:'mid',t:'年度后期垫资风险',d:'流动资金占用 160.92 万元；按招标付款方式每年度预付 5 个月后三个月一支付，接近按季结算，且尽调期间业主反馈 2026 年以来存在 2—3 个月延期支付，实际按财政局资金到位逐月支付，回款节奏不确定。'},
+  {lv:'mid',t:'合作方式与合同期限存不确定性',d:'与联合体成员的合作方式尚未落实具体协议，实际收益水平存在不确定性；绿化维养及道桥维养合同签订日与环卫作业部分不一致，服务期 2.5 年与 3 年不同步。'}
+];
+function renderDocCost(){
+  const d=TIHING;
+  $('page-doc2').innerHTML = docTabs('doc2') + `
+  <div class="doc-toolbar"><span class="dt-name">${d.name}</span><div class="dt-actions"><button class="doc-btn" onclick="window.print()">打印 / 导出 PDF</button><a class="doc-dl" href="${d.file}" download="${d.dl}">下载测算表原文</a></div></div>
+  <div class="doc-meta">${d.meta} · 金额单位：万元（除注明外）· 服务期：环卫 3 年 / 绿化、市政 2.5 年</div>
+  <div class="kpi-grid">
+    <div class="kpi"><div class="label">年服务费（含税·平均）</div><div class="value">${money(FIN.revTax)}<span class="unit">万元</span></div><div class="note">3 年最高限价 6,568.00 万元 · 年化 2,407.20 万元</div></div>
+    <div class="kpi"><div class="label">平均净利润</div><div class="value">${money(FIN.avgProfit)}<span class="unit">万元/年</span></div><div class="note">平均净利润率 ${FIN.avgMargin}% · 低于集团 8%</div></div>
+    <div class="kpi danger"><div class="label">最低净利润率（第三年）</div><div class="value">${FIN.minMargin}<span class="unit">%</span></div><div class="note">已跌破低效项目最低 6% 标准</div></div>
+    <div class="kpi ok"><div class="label">内部收益率（税后）</div><div class="value">${FIN.irr}<span class="unit">%</span></div><div class="note">资本金 IRR ${FIN.irrEquity}% · 初期总投资 ${money(FIN.invest)} 万元</div></div>
+  </div>
+  <div class="doc-section"><h3>一、测算结论</h3>
+    <p>提请评审资料测算以 3 年最高限价合计 <b>6,568.00 万元</b>（年化 2,407.20 万元）、初期总投资 <b>${money(FIN.invest)} 万元</b>、服务期 3 年（绿化、市政 2.5 年）为基础：平均业务收入（含税）${money(FIN.revTax)} 万元、不含税 ${money(FIN.revNoTax)} 万元，平均净利润 <b>${money(FIN.avgProfit)} 万元/年</b>、平均净利润率 <b>${FIN.avgMargin}%</b>，全投资内部收益率（税后）${FIN.irr}%、资本金内部收益率（税后）${FIN.irrEquity}%；最低年份（第三年）净利润率 ${FIN.minMargin}%。</p>
+    <p>提请评审资料「（一）成本及利润」与「投资」两张表勾稽一致：新购及收购车辆设备 140.18 + 智慧环卫 31.93 + 前期开办 12.38 + 流动资金 160.92 = 初期总投资 345.41 万元，投资占比 ${FIN.investRatio}%；其中新购及收购车辆设备（含智慧环卫）${money(FIN.devInvest)} 万元、占服务费比 ${FIN.devRatio}%，未超集团 3 年及以下项目不高于 30% 的标准。主要问题是<b>收益安全边际不足</b>：平均净利润率 ${FIN.avgMargin}% 低于集团一般要求 8%，第三年 ${FIN.minMargin}% 已跌破低效项目最低 6% 的标准。</p>
+    <div class="doc-note warn">口径说明：投资评审报告附件1「年服务费」为 2,358.52 万元、提请评审资料「平均业务收入（含税）」为 ${money(FIN.revTax)} 万元、运营评审意见投资回复「平均」为 2,130.17 万元，三者差异约 228 万元/年，主要来自绿化与市政 2.5 年服务期的年化折算方式。本页并列保留、不强行合并，合同审批前须统一口径。</div>
+  </div>
+  <div class="doc-section"><h3>二、基础信息与关键参数（项目投资数据一览表）</h3>
+    <div class="table-wrap"><table><thead><tr><th class="l">参数</th><th>取值</th><th class="l">参数</th><th>取值</th></tr></thead><tbody>
+      <tr><td class="l">年服务费（报告附件1）</td><td>${money(FIN.svcYear)} 万元</td><td class="l">运营年限</td><td>3 年（绿化、市政 2.5 年）</td></tr>
+      <tr><td class="l">采购预算（3 年）</td><td>7,260.00 万元</td><td class="l">采购最高限价（3 年）</td><td>6,568.00 万元（年化 2,407.20 万元）</td></tr>
+      <tr><td class="l">业务收入（含税·平均）</td><td>${money(FIN.revTax)} 万元</td><td class="l">业务收入（不含税·平均）</td><td>${money(FIN.revNoTax)} 万元</td></tr>
+      <tr><td class="l">平均净利润</td><td>${money(FIN.avgProfit)} 万元/年</td><td class="l">平均净利润率</td><td>${rateTag(FIN.avgMargin,8,6)}</td></tr>
+      <tr><td class="l">最低净利润率（第三年）</td><td>${rateTag(FIN.minMargin,8,6)}</td><td class="l">内部收益率（税后）</td><td>${FIN.irr}%</td></tr>
+      <tr><td class="l">资本金内部收益率（税后）</td><td>${FIN.irrEquity}%</td><td class="l">所得税率</td><td>25%</td></tr>
+      <tr><td class="l">初期总投资</td><td>${money(FIN.invest)} 万元</td><td class="l">投资占比</td><td>${FIN.investRatio}%</td></tr>
+      <tr><td class="l">新购及收购车辆设备（含智慧环卫）</td><td>${money(FIN.devInvest)} 万元</td><td class="l">新购设备投资占比</td><td>${FIN.devRatio}%（标准 ≤30%，达标）</td></tr>
+      <tr><td class="l">一线作业人员</td><td>147 人（环卫 92、绿化 55）</td><td class="l">管理人员</td><td>8 人（招标基准 284—312 人）</td></tr>
+      <tr><td class="l">前期开荒费</td><td>${money(FIN.prepFee)} 万元</td><td class="l">占三年总服务费</td><td>${FIN.prepRatio}%（按集团要求与续签回款挂钩）</td></tr>
+      <tr><td class="l">回款安排</td><td>年度预付 5 个月后每 3 个月一支付</td><td class="l">实际回款</td><td>按财政逐月支付，约 2—3 个月周期</td></tr>
+    </tbody></table></div>
+    <div class="doc-note">提请评审资料同时载明：测算已考虑绿化、道桥维养服务期 2.5 年；本项目作业车辆主要来源为内外部租赁车辆，部分电动快保车和无人作业设备按合作期完成折旧；融资方案不适用（无外部融资，采用项目预付款及内部周转资金）；投资主体为北控城市环境服务集团有限公司，资金来源为项目预付款 + 内部周转资金。</div>
+  </div>
+  <div class="doc-section"><h3>三、简明利润表</h3>
+    <div class="table-wrap"><table><thead><tr><th class="l">项目</th><th>平均</th><th>第一年（2027）</th><th>第二年（2028）</th><th>第三年（2029）</th></tr></thead><tbody>
+      ${RVT.map(r=>{const c=r[0]==='净利润'||r[0]==='净利润率'?'total':'';const cell=v=>typeof v==='number'?money(v):v;return '<tr'+(c?' class="'+c+'"':'')+'><td class="l">'+r[0]+'</td><td>'+cell(r[1])+'</td><td>'+cell(r[2])+'</td><td>'+cell(r[3])+'</td><td>'+cell(r[4])+'</td></tr>';}).join('')}
+    </tbody></table></div>
+    <div class="doc-note">营业成本及折旧合计为倒推值（不含税收入 − 税金及附加 − 利润总额），提请评审资料未单列成本明细表；本表按运营评审意见投资回复后的调整后口径列示，首年因绿化、市政仅运营半年，业务收入降至 1,709.30 万元。</div>
+  </div>
+  <div class="doc-section"><h3>四、提请口径与调整后利润对比</h3>
+    <div class="table-wrap"><table><thead><tr><th class="l">口径</th><th>利润项目</th><th>平均</th><th>第一年</th><th>第二年</th><th>第三年</th></tr></thead><tbody>
+      <tr class="subtotal"><td class="l">运营评审前<br>（初始测算）</td><td class="l">利润总额 / 净利润 / 净利润率</td><td>${money(PBT.init[0][1])} / ${money(PBT.init[1][1])} / ${PBT.init[2][1]}</td><td>${money(PBT.init[0][2])} / ${money(PBT.init[1][2])} / ${PBT.init[2][2]}</td><td>${money(PBT.init[0][3])} / ${money(PBT.init[1][3])} / ${PBT.init[2][3]}</td><td>${money(PBT.init[0][4])} / ${money(PBT.init[1][4])} / ${PBT.init[2][4]}</td></tr>
+      ${PBT.adj.map((r,i)=>'<tr'+(i===2?' class="total"':'')+'><td class="l">'+(i===0?'投资回复<br>（调整后）':'')+'</td><td class="l">'+r[0]+'</td><td>'+(typeof r[1]==='number'?money(r[1]):r[1])+'</td><td>'+(typeof r[2]==='number'?money(r[2]):r[2])+'</td><td>'+(typeof r[3]==='number'?money(r[3]):r[3])+'</td><td>'+(typeof r[4]==='number'?money(r[4]):r[4])+'</td></tr>').join('')}
+    </tbody></table></div>
+    <div class="doc-note warn">运营评审要求逐项确认修改后，平均净利润由 161.17 万元降至 122.07 万元（减少 39.10 万元、-24.26%），平均净利润率由 8.07% 降至 6.04%（下降 2.03 个百分点），由「高于集团 8%」转为「低于集团 8%」；第三年净利润率由 7.67% 降至 5.59%，跌破低效项目最低 6% 标准。</div>
+  </div>
+  <div class="doc-section"><h3>五、成本构成与勾稽要点</h3>
+    <p>提请评审资料未列示成本明细表，成本主要由「（二）人车配置」驱动。以下为提请测算配置与招标要求、运营评审意见核对后的成本驱动项：</p>
+    <div class="table-wrap"><table><thead><tr><th class="l">成本驱动项</th><th>提请测算</th><th class="l">核对结果</th></tr></thead><tbody>
+      ${CDT.map(r=>'<tr><td class="l">'+r[0]+'</td><td>'+r[1]+'</td><td class="l">'+r[2]+'</td></tr>').join('')}
+    </tbody></table></div>
+    <div class="doc-note">运营评审意见中已确认调整的测算项：新能源沿街垃圾车能耗由油费改为电费计列；车险及 GPS 由 9 辆核减为实际数量（多算原有车辆 3 辆）；无人驾驶清扫车补充维保成本与云控平台流量费；驾驶员人数按人车逻辑调整；垃圾处置费、过路过桥费回复不发生；扫街污泥倾倒至甲方指定场所无费用。测算未计公园广场水电费（回复为第三方活动产生，暂可忽略）。</div>
+    <div class="doc-note warn">人工成本是测算准确性的核心。提请测算按 147 名一线人员计列人工成本，若中标后按招标下限补足至 284 人（含绿地养护由 43 人补至 171 人、保洁员由 62 人补至 72 人），人工及社保成本将大幅上升，${FIN.avgMargin}% 的平均净利润率难以维持；绿化劳务用工与当地实际薪酬水平需按属地标准复核。</div>
+  </div>
+  <div class="doc-section"><h3>六、投资、折旧与退出</h3>
+    <div class="table-wrap"><table><thead><tr><th class="l">类别</th><th>提请评审资料（调整后）</th><th>初始测算</th><th>差异</th></tr></thead><tbody>
+      ${IVT.map(r=>{const c=r[0].indexOf('初期总投资')===0?'total':'';return '<tr'+(c?' class="'+c+'"':'')+'><td class="l">'+r[0]+'</td><td>'+(r[1]===null?'—':money(r[1]))+'</td><td>'+(r[2]===null?'未单列':money(r[2]))+'</td><td>'+diffTag(r[3])+'</td></tr>';}).join('')}
+      <tr class="total"><td class="l">投资占比</td><td>${FIN.investRatio}%</td><td>11.54%</td><td>+3.11 个百分点</td></tr>
+      <tr><td class="l">新购设备（含智慧环卫）占比</td><td>${FIN.devRatio}%</td><td>3.45%</td><td>+3.85 个百分点（标准 ≤30%）</td></tr>
+    </tbody></table></div>
+    <p><b>折旧与期末处置：</b>本项目作业车辆主要来源为内外部租赁车辆，部分电动快保车和无人作业设备按合作期（3 年）完成折旧。提请评审资料未单列年折旧额与折旧年限，服务期短于部分车辆设备折旧年限，期末存在未提完折旧，需在合同审批版测算中补列折旧口径与期末资产处置安排。</p>
+    <p><b>退场：</b>服务期 3 年，运营不达标或到期不能续签将面临退场。初始测算退场人员补偿 8.55 万元，投资回复调整后仅环卫板块为 22.275 万元；低于正常市场价的折现损失（新购及调拨）、调拨暂存物流成本（期初调入、期末调出）仍未计入。</p>
+    <div class="doc-note warn">流动资金 160.92 万元为期初主要资金占用，前期开荒费 ${money(FIN.prepFee)} 万元另按集团要求与续签回款挂钩。在年度预付 5 个月后按季结算、且实际存在 2—3 个月延期支付的条件下，需确认项目垫资能力与回款保障机制。</div>
+  </div>
+  <div class="doc-section"><h3>七、风控关注点</h3>
+    ${CDRISKS.map(r=>'<div class="risk-item '+r.lv+'"><div class="risk-head"><span class="risk-level '+r.lv+'">'+(r.lv==='high'?'高':'中')+'</span><span class="risk-title">'+r.t+'</span></div><div class="risk-desc">'+r.d+'</div></div>').join('')}
+  </div>
+  <div class="doc-section"><h3>八、审核意见与落实事项</h3>
+    <p><b>评审结论：</b>如中标，按决策要求落实后履行合同审批、开展投资运营。提请评审资料列明主要落实事项：</p>
+    <div class="steps">
+      <div class="step">补足边界信息以及人员接收信息；</div>
+      <div class="step">明确有利于我方及时收回服务费的保障机制；</div>
+      <div class="step">按评审条件落实合作方式及业务分配具体方案，补充相关协议；</div>
+      <div class="step">若合作条件发生变化、实际边界与招标存在差异对收益产生较大影响，需修订投资测算后进行合同审批或重新决策。</div>
+    </div>
+    <p style="margin-top:14px"><b>测算复核补充意见：</b></p>
+    <div class="steps">
+      <div class="step">以调整后 <b>${money(FIN.avgProfit)} 万元 / ${FIN.avgMargin}%</b> 作为审批口径，按第三年 ${FIN.minMargin}% 识别为「低于低效项目标准」项目；设置「实际净利率低于 6% 即触发重新决策」红线，中标后 30 日内按实际边界与人员接收情况重算。</div>
+      <div class="step">统一收入口径：将报告附件1 的 2,358.52 万元、提请评审资料的 ${money(FIN.revTax)} 万元与投资回复的 2,130.17 万元归一（明确绿化、市政 2.5 年的年化方式）后再履行合同审批，避免费用申报与考核基线口径不一致。</div>
+      <div class="step">人工成本按招标下限复核：保洁员 62→72 人、绿地养护 43→171 人（或明确二级管养标准下的实际定员），将补员成本、社保缴费基数及最低工资逐年上调计入测算，并按属地及浙江定额确定一至三级道路双班作业的成本增量。</div>
+      <div class="step">补列折旧与退场成本：明确年折旧额与折旧年限，按「期初调入、期末调出」补车辆折现损失与调拨暂存物流成本；退场补偿由 22.275 万元（仅环卫）扩展至全板块。</div>
+      <div class="step">除雪与应急：按近 5 年 5 次降雪过程补充 1 场暴雪的除雪成本，在合同中增加「暴雪及连续大雪应急结算条款」，明确超出作业范围、内容、标准、时限的强制性应急作业单独结算与补偿机制。</div>
+      <div class="step">资金与回款：在正式合同中明确月度支付、优先预付、杜绝季度付款，付款责任以业主单位协助到账为准，并确认无投资垫支、延迟付费承诺或条款。</div>
+    </div>
+    <div class="doc-note warn">本页为投资测算表关键数据与风控要点的整理，测算 Excel 原文件未包含在本地资料中；测算表原文（PDF）可通过右上角「下载测算表原文」获取，完整公式与明细以原表、原文件为准。</div>
+  </div>`;
+}
+/* ============ 上会资料 · 招标文件 ============ */
+const DOC3={name:'仁皇片区市政园林环卫一体化管养（城市大管家）项目公开招标文件',file:'files/tender.doc',dl:'仁皇片区市政园林环卫一体化管养（城市大管家）项目公开招标文件（定稿）.doc',meta:'公开招标文件（全流程电子） · 2026 年 9 月 · 113 页 · 原始 Word 文件'};
+function renderDoc3(){
+  $('page-doc3').innerHTML = docTabs('doc3') + `
+  <div class="doc-toolbar"><span class="dt-name">${DOC3.name}</span><div class="dt-actions"><a class="doc-dl" href="${DOC3.file}" download="${DOC3.dl}">下载 Word 原文</a></div></div>
+  <div class="doc-meta">${DOC3.meta} · 项目编号：330500266050010000031 · 采购预算 7,260 万元 / 最高限价 6,568 万元。</div>
+
+  <div class="doc-section"><h3>一、招标文件信息</h3>
+    <div class="table-wrap"><table><thead><tr><th class="l">项目</th><th class="l">内容</th></tr></thead><tbody>
+      <tr><td class="l">采购人</td><td class="l">湖州市住房和城乡建设局；采购代理机构为浙江金业管理咨询有限公司。</td></tr>
+      <tr><td class="l">财政审批编号</td><td class="l">湖财采确临[2026]13943号。</td></tr>
+      <tr><td class="l">项目编号</td><td class="l">330500266050010000031。</td></tr>
+      <tr><td class="l">采购方式</td><td class="l">公开招标（全流程电子），网上获取文件，不接受现场报名。</td></tr>
+      <tr><td class="l">采购预算 / 最高限价</td><td class="l">预算 7,260 万元；最高限价合计 6,568 万元（环卫 3,300、绿化 1,730、道桥 1,538）。</td></tr>
+      <tr><td class="l">资格要求</td><td class="l">市政公用工程施工总承包叁级及以上；未被列入失信被执行人、重大税收违法、政府采购严重违法失信名单；接受联合体，成员不超过 3 家。</td></tr>
+      <tr><td class="l">保证金</td><td class="l">履约保证金为无；投标保证金金额未在正文列明，以政采云公告及投标须知前附表为准。</td></tr>
+      <tr><td class="l">招标代理服务费</td><td class="l">以最高限价为计费基数，按 92,590 元计取，由中标供应商全额支付。</td></tr>
+      <tr><td class="l">开标时间</td><td class="l">招标文件载明 2026-10-21 14:00；项目实际开标记录为 2026-10-27。</td></tr>
+    </tbody></table></div>
+  </div>
+
+  <div class="doc-section"><h3>二、服务板块与期限</h3>
+    <div class="tbl-scroll"><table><thead><tr><th class="l">业务板块</th><th>最高限价总额（万元）</th><th>服务期限</th><th class="l">合同签订</th></tr></thead><tbody>
+      <tr><td class="l">环卫作业</td><td>3,300</td><td>2027-01-01 至 2029-12-31</td><td class="l">一年一签</td></tr>
+      <tr><td class="l">绿化维养</td><td>1,730</td><td>2027-07-01 至 2029-12-31</td><td class="l">分两次签订</td></tr>
+      <tr><td class="l">道桥维养</td><td>1,538</td><td>2027-07-01 至 2029-12-31</td><td class="l">分两次签订</td></tr>
+      <tr class="total"><td class="l">合计</td><td>6,568</td><td>—</td><td class="l">—</td></tr>
+    </tbody></table></div>
+    <p class="sec-note">三板块限价按各自服务期年化为 2,407.2 万元（环卫 1,100、绿化 692、道桥 615.2）；按 3 个完整年度平均为 2,189.33 万元（6,568÷3），两个口径不可混用。</p>
+  </div>
+
+  <div class="doc-section"><h3>三、报价与结算口径</h3>
+    <div class="tbl-scroll"><table><thead><tr><th class="l">板块</th><th class="l">报价方式</th><th class="l">限价 / 单价</th><th class="l">结算口径</th></tr></thead><tbody>
+      <tr><td class="l">环卫作业</td><td class="l">总价包干</td><td class="l">限价 3,300 万元；道路分项 8.13 / 6.85 / 6.46 / 5.13 / 3.81 / 2.75 元/㎡·年；垃圾清运 137.28 元/吨·天</td><td class="l">道路面积按实结算，日清运量暂估约 79 吨</td></tr>
+      <tr><td class="l">绿化维养</td><td class="l">固定单价</td><td class="l">4.07 元/㎡·年，暂估 170 万㎡，限价 1,730 万元</td><td class="l">面积按实结算，单价不调整</td></tr>
+      <tr><td class="l">道桥维养</td><td class="l">折扣率</td><td class="l">最高折扣 95%，限价 1,538 万元</td><td class="l">以审计审定价为基准×中标折扣</td></tr>
+    </tbody></table></div>
+    <p class="sec-note">环卫为总价包干，但道路保洁面积、垃圾清运量仍按实结算；绿化面积以第三方有效测绘或复核数据结算；道桥以审定价乘折扣结算。报价时须按各板块清单分别填报，不能以 6,568÷3 作为年化报价基数。</p>
+  </div>
+
+  <div class="doc-section"><h3>四、人员与车辆门槛</h3>
+    <div class="tbl-scroll"><table><thead><tr><th class="l">类别</th><th class="l">招标要求</th></tr></thead><tbody>
+      <tr><td class="l">人员配置</td><td class="l">基准配备 284—312 人：管理 9—11、环卫 95—121（保洁员服务费按 85 人核定，可在 72—98 人区间调整）、绿化 179、道桥 1；人员到位率≥90%；超龄劳动者占比≤75%；履约期内不得劳务外包；接收原一线环卫人员且一年内不得无故解聘。</td></tr>
+      <tr><td class="l">车辆设备</td><td class="l">环卫车辆 17 部、设备 36 部（合 53）；绿化 99 部（车辆 12、设备 87）；市政≥13 部（台）；合计≥165。车辆须 2021-01-01 后首次登记；租赁协议须覆盖服务期且出租方与所有权方一致。</td></tr>
+    </tbody></table></div>
+    <p class="sec-note">人员、车辆、设备均为实质性响应条款；中标后更换须经采购人书面同意，且不得低于投标响应条件。</p>
+  </div>
+
+  <div class="doc-section"><h3>五、考核与支付</h3>
+    <div class="tbl-scroll"><table><thead><tr><th class="l">阶段</th><th class="l">支付安排</th></tr></thead><tbody>
+      <tr><td class="l">环卫 2027 年</td><td class="l">合同生效后 7 个工作日内预付不超过当年约定服务费 40%；4/30 前累计≤46%、7/31 前≤69%、10/31 前≤85%、2028-01-31 前 100%。</td></tr>
+      <tr><td class="l">环卫 2028 年</td><td class="l">2028-01-31 前当年累计≤23%；4/30 前≤46%、7/31 前≤69%、10/31 前≤87%、2029-01-31 前 100%。</td></tr>
+      <tr><td class="l">绿化 / 道桥</td><td class="l">按 2027-07-01—2028-06-30、2028-07-01—2029-12-31 两个年度，各年度具备条件后 7 个工作日内预付 40%，审定后支付至 100%。</td></tr>
+      <tr><td class="l">考核挂钩</td><td class="l">月度、季度、年度考核；年度按约定服务费 5% 结合考核结果、1.5%—3% 结合年终排名核减，另有 7% 与上一年代付代缴费用清算挂钩；季度不合格或排名末 2 位且未达优秀，可推迟或扣减当期服务费 1%，延迟最长 6 个月。</td></tr>
+    </tbody></table></div>
+    <p class="sec-note">履约保证金为无；合同期内未经甲方同意不得转让或分包，违约可终止合同并按合同总值 5% 支付违约金；“移交平稳过渡计划实施方案”纳入技术评分（5 分）。</p>
+  </div>
+
+  <div class="doc-section"><h3>六、审计发现：投标前需澄清</h3>
+    <ul>
+      <li>人员表“管理人员”分项为项目经理 1、项目主管 3、专职安全员 1—3、信息化管理员 2，合计 7—9 人；但小计栏为 9—11 人，相差 2 人。总计数 284—312 按小计口径，投标前须书面澄清。</li>
+      <li>招标文件载明开标时间 2026-10-21 14:00，项目实际开标记录为 2026-10-27，应以政采云更正公告及实际开标记录为准。</li>
+      <li>保洁员“服务费按 85 人核定、72—98 人区间增减”与环卫小计 95—121 人并不矛盾：95—121＝保洁员 72—98＋驾驶员 21＋现场管理 2；但报价时须按 85 人费率测算，不能按 62 人配置反推服务费。</li>
+      <li>环卫车辆 17 部与设备 36 部分列，合计 53 部；绿化 99 部含车辆 12 部、设备 87 台；市政≥13 部（台）。投标响应须按“车辆＋设备”分别列示，避免只响应车辆数量。</li>
+      <li>三板块限价合计 6,568 万元，按各自服务期年化为 2,407.2 万元，按 3 个完整年度平均为 2,189.33 万元；评审测算 2028 年满年含税服务费 2,358.52 万元、三年平均 2,146.93 万元，须按对应口径比较。</li>
+      <li>招标正文将详细考核分值、扣款标准指向采购人现行考核办法，评审所附 88 分、80—89 分档扣款等标准应在签约前取得最新版本并逐条核对。</li>
+    </ul>
+    <div class="doc-note warn">本页为招标文件关键条款索引与审计提示，不替代原文。服务范围、技术要求、合同条款及附件格式均以招标文件及政采云更正公告为准。</div>
+  </div>`;
+}
+
+/* ============ 导航 ============ */
+var VIEWS=['dashboard','finance','staff','risks','conclusion','background','base','invest','ops','doc1','doc2','doc3'];
+var chartsDone={};
+function navigateTo(page, el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  $('page-'+page).classList.add('active');
+  document.querySelectorAll('.sidebar-nav .nav-item').forEach(n=>n.classList.remove('active'));
+  document.querySelectorAll('.sidebar-nav .nav-group').forEach(g=>g.classList.remove('has-active'));
+  if(el){ el.classList.add('active'); var g=el.closest('.nav-group'); if(g){g.classList.add('open');g.classList.add('has-active');} }
+  else if(['background','base','invest','ops'].indexOf(page)>=0){ var rv=$('navReview'); if(rv) rv.classList.add('active'); }
+  else if(['doc1','doc2','doc3'].indexOf(page)>=0){ var nd=$('navDoc'); if(nd) nd.classList.add('active'); }
+  $('pageTitle').textContent={dashboard:'数据看板',finance:'财务分析',staff:'人车配置',risks:'风险预警',conclusion:'评审结论',background:'评审信息 · 背景信息',base:'评审信息 · 基础信息',invest:'评审信息 · 投资信息',ops:'评审信息 · 运营信息',doc1:'上会资料 · 运营评审意见',doc2:'上会资料 · 投资测算表',doc3:'上会资料 · 招标文件'}[page]||page;
+  $('sidebar').classList.remove('open');$('sidebarOverlay').classList.remove('open');
+  try{ window.scrollTo(0,0); }catch(e){}
+  if(page==='dashboard') setTimeout(()=>dashCharts(),40);
+  if(page==='finance') setTimeout(()=>finCharts(),40);
+  if(page==='staff') setTimeout(()=>staffCharts(),40);
+}
+function toggleGroup(h){h.parentElement.classList.toggle('open');}
+function toggleSidebar(){$('sidebar').classList.toggle('open');$('sidebarOverlay').classList.toggle('open');}
+
+/* ============ 图表 ============ */
+const GRID={color:'#eef2f7'};
+function bar(id,labels,data,colors,unit){
+  const el=$(id); if(!el||el._done)return; el._done=true;
+  new Chart(el,{type:'bar',data:{labels,datasets:[{data,backgroundColor:colors,borderRadius:6}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+money(c.parsed.y)+' '+(unit||'')}}},
+      scales:{y:{beginAtZero:true,grid:GRID,ticks:{callback:v=>v+(unit||'')},title:{display:!!unit,text:'单位：'+(unit||'').trim()}},
+        x:{grid:{display:false}}}}});
+}
+function doughnut(id,labels,data,colors,unit){
+  const el=$(id); if(!el||el._done)return; el._done=true;
+  const total=data.reduce((a,b)=>a+b,0);
+  new Chart(el,{type:'doughnut',data:{labels,datasets:[{data,backgroundColor:colors,borderWidth:2,borderColor:'#fff'}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{boxWidth:12,font:{size:11},generateLabels:ch=>ch.data.labels.map((l,i)=>({text:l+' '+money(ch.data.datasets[0].data[i])+(unit?' '+unit:''),fillStyle:ch.data.datasets[0].backgroundColor[i],strokeStyle:ch.data.datasets[0].backgroundColor[i],lineWidth:0,index:i,hidden:false}))}},tooltip:{callbacks:{label:c=>' '+c.label+': '+money(c.parsed)+' 万元（'+(total?c.parsed/total*100:0).toFixed(1)+'%）'}}}}});
+}
+function hbar(id,labels,data,colors,unit){
+  const el=$(id); if(!el||el._done)return; el._done=true;
+  const total=data.reduce((a,b)=>a+b,0);
+  new Chart(el,{type:'bar',data:{labels,datasets:[{data,backgroundColor:colors,borderRadius:5}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+money(c.parsed.x)+' '+(unit||'')+'（'+(total?c.parsed.x/total*100:0).toFixed(1)+'%）'}}},
+      scales:{x:{beginAtZero:true,grid:GRID,ticks:{callback:v=>v+(unit||'')},title:{display:true,text:'金额（'+(unit||'').trim()+'/年）'}},
+        y:{grid:{display:false},ticks:{font:{size:11}}}}}});
+}
+function yearsChart(id){
+  const el=$(id); if(!el||el._done)return; el._done=true;
+  new Chart(el,{data:{labels:YEARS.labels,datasets:[
+    {type:'bar',label:'业务收入（不含税）',data:YEARS.rev,backgroundColor:'#0891b2',borderRadius:6,yAxisID:'y'},
+    {type:'bar',label:'主营业务成本',data:YEARS.cost,backgroundColor:'#cbd5e1',borderRadius:6,yAxisID:'y'},
+    {type:'bar',label:'净利润',data:YEARS.net,backgroundColor:'#14b8a6',borderRadius:6,yAxisID:'y'},
+    {type:'line',label:'净利润率（右轴）',data:YEARS.margin,borderColor:'#dc2626',backgroundColor:'#dc2626',tension:.25,pointRadius:4,borderWidth:2.5,yAxisID:'y1'},
+    {type:'line',label:'集团要求 8%',data:[8,8,8],borderColor:'#f59e0b',borderDash:[6,4],pointRadius:0,borderWidth:2,yAxisID:'y1'},
+    {type:'line',label:'低效底线 6%',data:[6,6,6],borderColor:'#64748b',borderDash:[4,4],pointRadius:0,borderWidth:2,yAxisID:'y1'}
+  ]},options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}},
+      tooltip:{callbacks:{label:c=>' '+c.dataset.label+': '+money(c.parsed.y)+(c.dataset.yAxisID==='y1'?' %':' 万元')}}},
+    scales:{y:{beginAtZero:true,grid:GRID,ticks:{callback:v=>v+' 万元'},title:{display:true,text:'金额（万元）'}},
+      y1:{position:'right',min:0,max:10,grid:{display:false},ticks:{callback:v=>v+' %'},title:{display:true,text:'净利润率（%）'}},
+      x:{grid:{display:false}}}}});
+}
+function cashChart(id){
+  const el=$(id); if(!el||el._done)return; el._done=true;
+  new Chart(el,{data:{labels:CASH.labels,datasets:[
+    {type:'bar',label:'所得税后净现金流',data:CASH.net,backgroundColor:CASH.net.map(v=>v<0?'#dc2626':'#0891b2'),borderRadius:6,yAxisID:'y'},
+    {type:'line',label:'累计净现金流',data:CASH.cum,borderColor:'#f59e0b',backgroundColor:'#f59e0b',tension:.2,pointRadius:4,borderWidth:2.5,yAxisID:'y'}
+  ]},options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}},tooltip:{callbacks:{label:c=>' '+c.dataset.label+': '+money(c.parsed.y)+' 万元'}}},
+    scales:{y:{grid:GRID,ticks:{callback:v=>v+' 万元'},title:{display:true,text:'金额（万元）'}},x:{grid:{display:false}}}}});
+}
+function staffChart(id){
+  const el=$(id); if(!el||el._done)return; el._done=true;
+  new Chart(el,{type:'bar',data:{labels:['管理人员','环卫作业','绿化维养','道桥维养','合计'],datasets:[
+    {label:'招标下限',data:[9,95,179,1,284],backgroundColor:'#94a3b8',borderRadius:5},
+    {label:'招标上限',data:[11,121,179,1,312],backgroundColor:'#cbd5e1',borderRadius:5},
+    {label:'在册测算',data:[8,92,55,1,156],backgroundColor:'#0891b2',borderRadius:5}
+  ]},options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}},tooltip:{callbacks:{label:c=>' '+c.dataset.label+': '+c.parsed.y+' 人'}}},
+    scales:{y:{beginAtZero:true,grid:GRID,ticks:{callback:v=>v+' 人'},title:{display:true,text:'人数（人）'}},x:{grid:{display:false}}}}});
+}
+function areaChart(id){
+  const el=$(id); if(!el||el._done)return; el._done=true;
+  new Chart(el,{type:'bar',data:{labels:AREA.map(x=>x.k),datasets:[{data:AREA.map(x=>x.v),backgroundColor:AREA.map(x=>x.c),borderRadius:5}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+money(c.parsed.x)+' ㎡/人·班'}}},
+      scales:{x:{beginAtZero:true,grid:GRID,ticks:{callback:v=>v+' ㎡'},title:{display:true,text:'人均覆盖面积（㎡/人·班）'}},y:{grid:{display:false},ticks:{font:{size:11}}}}}});
+}
+function vehChart(id){
+  const el=$(id); if(!el||el._done)return; el._done=true;
+  new Chart(el,{type:'bar',data:{labels:VEH_SUMMARY.map(x=>x.k),datasets:[
+    {label:'招标',data:VEH_SUMMARY.map(x=>x.a),backgroundColor:'#94a3b8',borderRadius:5},
+    {label:'测算',data:VEH_SUMMARY.map(x=>x.c),backgroundColor:'#0891b2',borderRadius:5}
+  ]},options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}},tooltip:{callbacks:{label:c=>' '+c.dataset.label+': '+c.parsed.y+' 部'}}},
+    scales:{y:{beginAtZero:true,grid:GRID,ticks:{callback:v=>v+' 部'},title:{display:true,text:'数量（部）'}},x:{grid:{display:false}}}}});
+}
+function dashCharts(){
+  bar('chMargin',['平均净利润率','最低(第三年)','集团要求','低效线'],[6.04,5.59,8,6],['#0891b2','#dc2626','#94a3b8','#d97706'],'%');
+  doughnut('chInvest',INVEST_BREAK.map(x=>x.k),INVEST_BREAK.map(x=>x.v),['#0891b2','#4f6ef7','#14b8a6','#f59e0b']);
+  bar('chSvc',SVC_BREAK.map(x=>x.k+'('+x.term+')'),SVC_BREAK.map(x=>x.v),['#0891b2','#14b8a6','#4f6ef7'],'万元');
+  bar('chRound',['上一轮','本轮'],[ROUND.prev,ROUND.cur],['#94a3b8','#0891b2'],'万元');
+}
+function finCharts(){
+  var page=$('page-finance');
+  if(!page) return;
+  var active=page.querySelector('.tab-panel.active');
+  if(!active) return;
+  if(active.id==='finPanel-years'){
+    yearsChart('chYears2');
+  }else if(active.id==='finPanel-cost'){
+    doughnut('chCostSeg',SEG_COST.map(x=>x.k),SEG_COST.map(x=>x.v),SEG_COST.map(x=>x.c));
+    hbar('chCostItems',COST_ITEMS.map(x=>x.k),COST_ITEMS.map(x=>x.v),COST_ITEMS.map((x,i)=>i<2?'#dc2626':(i<4?'#f59e0b':'#0891b2')),'万元');
+  }else if(active.id==='finPanel-cash'){
+    cashChart('chCash');
+  }
+}
+function staffCharts(){
+  var people=$('staffPanel-people'), vehicle=$('staffPanel-vehicle');
+  if(people&&people.classList.contains('active')){ staffChart('chStaff'); areaChart('chArea'); }
+  if(vehicle&&vehicle.classList.contains('active')){ vehChart('chVeh'); }
+}
+
+/* ============ 初始化 ============ */
+renderDashboard();renderFinance();renderStaff();renderRisks();renderConclusion();
+renderBackground();renderBase();renderInvest();renderOps();renderDoc();renderDocCost();renderDoc3();
+dashCharts();
+</script>
+</body>
+</html>
